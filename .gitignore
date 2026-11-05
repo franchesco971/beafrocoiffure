@@ -32,6 +32,13 @@ yarn-error.log*
 
 # env files (can opt-in for committing if needed)
 .env*
+!.env.example
+
+# local editor history
+.history
+
+# prisma client (généré par `prisma generate`)
+/src/generated
 
 # vercel
 .vercel
