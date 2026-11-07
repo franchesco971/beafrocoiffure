@@ -9,7 +9,7 @@ const FACTS = ["Réservation en ligne", "Aucun compte à créer", "Confirmation 
 
 export function Hero() {
   return (
-    <section id="top" className="relative isolate overflow-hidden pb-24 pt-28 lg:pt-32">
+    <section id="top" className="relative isolate overflow-hidden pb-24 pt-32 lg:pt-36">
       <div
         aria-hidden="true"
         className="absolute -right-[20%] top-[-10%] -z-10 size-[70rem] rounded-full bg-[radial-gradient(closest-side,rgba(217,164,65,0.16),rgba(194,86,43,0.05)_55%,transparent_75%)]"
@@ -69,16 +69,16 @@ export function Hero() {
             <Mark className="absolute left-1/2 top-1/2 w-[52%] -translate-x-1/2 -translate-y-1/2 text-gold" />
           </div>
 
-          <div className="bloom absolute -bottom-6 -left-2 z-20 sm:-left-6 lg:-bottom-4 lg:-left-[14%]" style={delay(1000)}>
+          <div
+            className="bloom absolute -bottom-6 -left-2 z-20 sm:-left-6 lg:-bottom-4 lg:-left-[14%]"
+            style={delay(1000)}
+          >
             <SpinBadge href={BOOKING_HREF} />
           </div>
         </div>
       </div>
 
-      <ul
-        className="fade-up mx-auto mt-20 grid max-w-[88rem] gap-px px-5 sm:grid-cols-3 lg:px-10"
-        style={delay(1100)}
-      >
+      <ul className="fade-up mx-auto mt-20 grid max-w-[88rem] gap-px px-5 sm:grid-cols-3 lg:px-10" style={delay(1100)}>
         {FACTS.map((fact) => (
           <li
             key={fact}

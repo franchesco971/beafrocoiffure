@@ -1,13 +1,7 @@
 import { HAIR_SERVICES } from "../src/content/services";
+import { hashPassword } from "../src/lib/auth/password";
 import { db } from "../src/lib/db";
-
-const slugify = (value: string) =>
-  value
-    .normalize("NFD")
-    .replace(/\p{M}/gu, "")
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-|-$/g, "");
+import { slugify } from "../src/lib/slug";
 
 // Durées provisoires (minutes), dans l'ordre de HAIR_SERVICES : à confirmer avec la cliente.
 const HAIR_DURATIONS = [240, 480, 120, 120, 60, 120, 90, 45];
@@ -25,7 +19,13 @@ const WELLNESS = [
   },
 ] as const;
 
-const GALLERY_CATEGORIES = ["Locks", "MicroLocks", "Soins capillaires", "Coiffures naturelles", "Transformations avant/après"];
+const GALLERY_CATEGORIES = [
+  "Locks",
+  "MicroLocks",
+  "Soins capillaires",
+  "Coiffures naturelles",
+  "Transformations avant/après",
+];
 
 // `update: {}` : relancer le seed ne doit jamais écraser ce qui a été modifié depuis l'administration.
 async function seedCategory(name: string, universe: "HAIR" | "WELLNESS", position: number) {
@@ -33,7 +33,13 @@ async function seedCategory(name: string, universe: "HAIR" | "WELLNESS", positio
   return db.serviceCategory.upsert({ where: { slug }, update: {}, create: { name, slug, universe, position } });
 }
 
-async function seedService(categoryId: number, title: string, description: string, durationMin: number, position: number) {
+async function seedService(
+  categoryId: number,
+  title: string,
+  description: string,
+  durationMin: number,
+  position: number,
+) {
   const slug = slugify(title);
   await db.service.upsert({
     where: { slug },
@@ -42,7 +48,19 @@ async function seedService(categoryId: number, title: string, description: strin
   });
 }
 
+async function seedAdmin() {
+  const email = process.env.ADMIN_EMAIL?.trim().toLowerCase();
+  const password = process.env.ADMIN_PASSWORD;
+  if (!email || !password) return;
+  if (password.length < 12) throw new Error("ADMIN_PASSWORD doit contenir au moins 12 caractères.");
+
+  const passwordHash = await hashPassword(password);
+  await db.adminUser.upsert({ where: { email }, update: {}, create: { email, passwordHash, role: "ADMIN" } });
+}
+
 async function main() {
+  await seedAdmin();
+
   for (const [index, { title, text }] of HAIR_SERVICES.entries()) {
     const category = await seedCategory(title, "HAIR", index + 1);
     await seedService(category.id, title, text, HAIR_DURATIONS[index], index + 1);

@@ -35,5 +35,18 @@ services:
       db:
         condition: service_healthy
 
+  worker:
+    build: .
+    # Le client Prisma est généré par `app` : relance automatique tant qu'il n'existe pas.
+    command: npm run worker
+    restart: unless-stopped
+    env_file: .env
+    volumes:
+      - .:/app
+      - /app/node_modules
+    depends_on:
+      db:
+        condition: service_healthy
+
 volumes:
   pgdata:

@@ -1,4 +1,5 @@
-// Catégories issues du cahier des charges (M2). Tarifs et durées : gérés en base, pas ici.
+// Catégories issues du cahier des charges (M2). Utilisées uniquement par le seed : le catalogue public vient de la base.
+// Tarifs et durées : gérés en base, pas ici.
 export const HAIR_SERVICES = [
   {
     title: "Départ de locks",

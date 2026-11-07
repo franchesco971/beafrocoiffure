@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { ScallopRing } from "@/components/brand/ScallopRing";
 import { Arrow } from "@/components/ui/Arrow";
 import { WELLNESS_OFFERS } from "@/content/services";
@@ -26,13 +27,13 @@ export function Universes() {
               Cheveux texturés, locks, MicroLocks et soins capillaires : un savoir-faire précis et une main douce, du
               premier diagnostic à l’entretien.
             </p>
-            <a
-              href="#prestations"
+            <Link
+              href="/coiffure"
               className="group mt-10 inline-flex items-center gap-3 border-b border-ink/40 pb-1 text-sm font-medium uppercase tracking-[0.18em] transition-colors hover:border-ink"
             >
               Voir les prestations
               <Arrow className="size-4 transition-transform duration-500 ease-out-expo group-hover:rotate-45" />
-            </a>
+            </Link>
           </article>
 
           <article className="reveal relative rounded-[2rem] border border-gold/30 bg-ink-2 p-8 md:p-12 lg:col-span-5 lg:mt-28">

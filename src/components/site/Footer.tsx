@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { Logo } from "@/components/brand/Logo";
 import { NAV_LINKS } from "@/lib/site";
 
@@ -20,9 +21,9 @@ export function Footer() {
           <ul className="mt-5 space-y-3">
             {NAV_LINKS.map((link) => (
               <li key={link.href}>
-                <a href={link.href} className="text-bone transition-colors hover:text-gold">
+                <Link href={link.href} className="text-bone transition-colors hover:text-gold">
                   {link.label}
-                </a>
+                </Link>
               </li>
             ))}
           </ul>

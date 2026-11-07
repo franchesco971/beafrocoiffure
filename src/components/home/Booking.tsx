@@ -20,10 +20,7 @@ export function Booking() {
 
         <ol className="mt-16 grid gap-x-8 gap-y-12 sm:grid-cols-2 lg:mt-24 lg:grid-cols-4">
           {BOOKING_STEPS.map((step, index) => (
-            <li
-              key={step.title}
-              className={`reveal border-t border-gold/40 pt-6 ${STAIRS[index]}`}
-            >
+            <li key={step.title} className={`reveal border-t border-gold/40 pt-6 ${STAIRS[index]}`}>
               <span className="display block text-7xl italic text-gold/90">{index + 1}</span>
               <h3 className="display mt-4 text-2xl text-bone md:text-3xl">{step.title}</h3>
               <p className="mt-3 max-w-[28ch] text-bone-dim">{step.text}</p>

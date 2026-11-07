@@ -9,11 +9,11 @@ Basé sur le plan de réalisation du [document technique](DOCUMENT-TECHNIQUE.md#
 - [x] Docker : `app`, `db`, `adminer`, `mailpit`
 - [x] Prisma 7 (adaptateur PostgreSQL, `prisma.config.ts`)
 - [x] Thème noir & or, polices, logo et page d'accueil
-- [ ] CI GitHub Actions (lint, tests, build de l'image Docker)
-- [ ] Prettier, Husky (pré-commit : lint + `tsc --noEmit`)
-- [ ] shadcn/ui
-- [ ] Service `worker` dans Docker Compose
-- [ ] Commit initial
+- [x] CI GitHub Actions (lint, tests, build de l'image Docker)
+- [x] Prettier, Husky (pré-commit : lint + `tsc --noEmit`)
+- [x] shadcn/ui
+- [x] Service `worker` dans Docker Compose
+- [x] Commit initial
 
 ### Étape 1 — Modèle de données
 - [x] Schéma Prisma complet (20 tables)
@@ -21,15 +21,15 @@ Basé sur le plan de réalisation du [document technique](DOCUMENT-TECHNIQUE.md#
 - [x] Seed : catégories, prestations de départ, catégories de galerie
 
 ### Authentification administrateur
-- [ ] Auth.js (credentials, sessions cookies httpOnly)
-- [ ] Rôles et contrôle côté serveur sur chaque action admin
-- [ ] Limitation des tentatives de connexion
-- [ ] Journal d'audit (`audit_log`)
+- [x] Auth.js (credentials, sessions cookies httpOnly)
+- [x] Rôles et contrôle côté serveur sur chaque action admin
+- [x] Limitation des tentatives de connexion
+- [x] Journal d'audit (`audit_log`)
 
 ### Étape 2 — Catalogue de prestations
-- [ ] Pages publiques : liste par catégorie et fiche prestation (`/coiffure/[slug]`)
-- [ ] Remplacer les données statiques de la page d'accueil par la base
-- [ ] Admin : CRUD catégories et prestations (tarif, durée, vidéo, conditions, activation)
+- [x] Pages publiques : liste par catégorie et fiche prestation (`/coiffure/[slug]`)
+- [x] Remplacer les données statiques de la page d'accueil par la base
+- [x] Admin : CRUD catégories et prestations (tarif, durée, vidéo, conditions, activation)
 
 ### Étape 3 — Réservation (priorité n°1)
 - [ ] Moteur de disponibilités (`modules/booking`) et tests unitaires Vitest

@@ -38,7 +38,7 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
-    <html lang="fr" className={`${fraunces.variable} ${jost.variable}`}>
+    <html lang="fr" className={`dark ${fraunces.variable} ${jost.variable}`}>
       <body className="min-h-dvh overflow-x-clip">{children}</body>
     </html>
   );
