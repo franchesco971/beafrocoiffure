@@ -1,4 +1,7 @@
+import Link from "next/link";
+import { Arrow } from "@/components/ui/Arrow";
 import { BOOKING_STEPS } from "@/content/services";
+import { BOOKING_HREF } from "@/lib/site";
 
 const STAIRS = ["lg:mt-0", "lg:mt-12", "lg:mt-24", "lg:mt-36"] as const;
 
@@ -28,7 +31,17 @@ export function Booking() {
           ))}
         </ol>
 
-        <p className="reveal mt-16 max-w-[56ch] border-l-2 border-gold pl-5 text-bone-dim">
+        <div className="reveal mt-16">
+          <Link
+            href={BOOKING_HREF}
+            className="group inline-flex items-center gap-3 rounded-full bg-gold px-7 py-4 text-sm font-medium uppercase tracking-[0.18em] text-ink transition-colors hover:bg-bone"
+          >
+            Voir les créneaux libres
+            <Arrow className="size-4 transition-transform duration-500 ease-out-expo group-hover:rotate-45" />
+          </Link>
+        </div>
+
+        <p className="reveal mt-12 max-w-[56ch] border-l-2 border-gold pl-5 text-bone-dim">
           Un imprévu ? Vous pouvez demander une modification ou annuler depuis le lien sécurisé de votre e-mail, selon
           les conditions de la prestation.
         </p>

@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { Mark } from "@/components/brand/Logo";
 import { ScallopRing } from "@/components/brand/ScallopRing";
 import { SpinBadge } from "@/components/brand/SpinBadge";
@@ -41,13 +42,13 @@ export function Hero() {
           </p>
 
           <div className="fade-up mt-10 flex flex-wrap items-center gap-x-8 gap-y-5" style={delay(850)}>
-            <a
+            <Link
               href={BOOKING_HREF}
               className="group inline-flex items-center gap-3 rounded-full bg-gold px-7 py-4 text-sm font-medium uppercase tracking-[0.18em] text-ink transition-colors hover:bg-bone"
             >
               Prendre rendez-vous
               <Arrow className="size-4 transition-transform duration-500 ease-out-expo group-hover:rotate-45" />
-            </a>
+            </Link>
             <a
               href="#prestations"
               className="border-b border-bone/40 pb-1 text-sm uppercase tracking-[0.18em] text-bone transition-colors hover:border-gold hover:text-gold"

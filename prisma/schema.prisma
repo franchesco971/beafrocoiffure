@@ -231,20 +231,23 @@ model Service {
 // ───────── Réservations ─────────
 
 model Booking {
-  id           Int           @id @default(autoincrement())
-  clientId     Int           @map("client_id")
-  status       BookingStatus @default(PENDING)
-  startsAt     DateTime      @map("starts_at") @db.Timestamptz(3)
+  id                Int           @id @default(autoincrement())
+  clientId          Int           @map("client_id")
+  status            BookingStatus @default(PENDING)
+  startsAt          DateTime      @map("starts_at") @db.Timestamptz(3)
   // Bloc occupé : durée totale + pause entre prestations (cf. document technique §6.1).
-  endsAt       DateTime      @map("ends_at") @db.Timestamptz(3)
-  locationType LocationType? @map("location_type")
-  address      String?
-  notes        String?
+  endsAt            DateTime      @map("ends_at") @db.Timestamptz(3)
+  locationType      LocationType? @map("location_type")
+  address           String?
+  notes             String?
+  // Demande de modification envoyée par le client depuis son lien sécurisé, traitée par l'administrateur.
+  changeRequest     String?       @map("change_request")
+  changeRequestedAt DateTime?     @map("change_requested_at") @db.Timestamptz(3)
   // Jeton aléatoire (≥ 128 bits) du lien client d'annulation/modification.
-  cancelToken  String        @unique @default(dbgenerated("replace(((gen_random_uuid())::text || (gen_random_uuid())::text), '-'::text, ''::text)")) @map("cancel_token")
-  source       BookingSource @default(ONLINE)
-  createdAt    DateTime      @default(now()) @map("created_at") @db.Timestamptz(3)
-  updatedAt    DateTime      @updatedAt @map("updated_at") @db.Timestamptz(3)
+  cancelToken       String        @unique @default(dbgenerated("replace(((gen_random_uuid())::text || (gen_random_uuid())::text), '-'::text, ''::text)")) @map("cancel_token")
+  source            BookingSource @default(ONLINE)
+  createdAt         DateTime      @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt         DateTime      @updatedAt @map("updated_at") @db.Timestamptz(3)
 
   client        Client         @relation(fields: [clientId], references: [id], onDelete: Restrict)
   items         BookingItem[]

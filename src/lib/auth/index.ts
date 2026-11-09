@@ -4,6 +4,7 @@ import { audit } from "@/lib/audit";
 import { verifyPassword } from "@/lib/auth/password";
 import { db } from "@/lib/db";
 import { createRateLimiter } from "@/lib/rate-limit";
+import { clientIp } from "@/lib/request";
 
 const SESSION_MAX_AGE = 8 * 60 * 60;
 const FIFTEEN_MINUTES = 15 * 60 * 1000;
@@ -20,9 +21,6 @@ export class TooManyAttempts extends CredentialsSignin {
 // Échecs seulement : 5 par e-mail et 20 par adresse IP sur 15 minutes.
 const failuresByEmail = createRateLimiter({ name: "login-email", limit: 5, windowMs: FIFTEEN_MINUTES });
 const failuresByIp = createRateLimiter({ name: "login-ip", limit: 20, windowMs: FIFTEEN_MINUTES });
-
-// Derrière Caddy, `x-forwarded-for` contient l'adresse du client.
-const clientIp = (request: Request) => request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "inconnue";
 
 export const { auth, signIn, signOut } = NextAuth({
   session: { strategy: "jwt", maxAge: SESSION_MAX_AGE },

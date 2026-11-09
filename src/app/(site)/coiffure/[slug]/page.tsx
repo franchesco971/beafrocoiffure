@@ -127,7 +127,7 @@ async function ServiceDetails({ params }: Pick<PageProps<"/coiffure/[slug]">, "p
               </p>
             )}
             <Link
-              href={BOOKING_HREF}
+              href={`${BOOKING_HREF}?service=${encodeURIComponent(slug)}`}
               className="group mt-8 flex items-center justify-center gap-3 rounded-full bg-gold px-7 py-4 text-sm font-medium uppercase tracking-[0.18em] text-ink transition-colors hover:bg-bone"
             >
               Réserver cette prestation

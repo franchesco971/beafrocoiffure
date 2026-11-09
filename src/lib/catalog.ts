@@ -58,3 +58,37 @@ export async function getHairServiceSlugs() {
   });
   return services.map(({ slug }) => slug);
 }
+
+// Toutes les prestations réservables (coiffure et beauté), pour le tunnel de réservation.
+export async function getBookableCatalog() {
+  "use cache";
+  cacheTag(CATALOG_TAG);
+  cacheLife("hours");
+
+  return db.serviceCategory.findMany({
+    where: { services: { some: { isActive: true } } },
+    orderBy: [{ universe: "asc" }, { position: "asc" }, { id: "asc" }],
+    select: {
+      id: true,
+      name: true,
+      universe: true,
+      services: {
+        where: { isActive: true },
+        orderBy: [{ position: "asc" }, { id: "asc" }],
+        select: {
+          id: true,
+          slug: true,
+          title: true,
+          description: true,
+          durationMin: true,
+          priceMode: true,
+          priceCents: true,
+          requiresValidation: true,
+        },
+      },
+    },
+  });
+}
+
+export type BookableCatalog = Awaited<ReturnType<typeof getBookableCatalog>>;
+export type BookableService = BookableCatalog[number]["services"][number];

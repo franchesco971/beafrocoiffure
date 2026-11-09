@@ -32,12 +32,12 @@ Basé sur le plan de réalisation du [document technique](DOCUMENT-TECHNIQUE.md#
 - [x] Admin : CRUD catégories et prestations (tarif, durée, vidéo, conditions, activation)
 
 ### Étape 3 — Réservation (priorité n°1)
-- [ ] Moteur de disponibilités (`modules/booking`) et tests unitaires Vitest
-- [ ] API `GET /api/availability` et `POST /api/bookings` (erreur 409 en cas de conflit)
-- [ ] Tunnel de réservation (`/reservation`) et branchement des boutons « Prendre rendez-vous »
-- [ ] Lien sécurisé `cancel_token` : consultation, annulation, demande de modification
-- [ ] Règles paramétrables (`setting`) : pause, délai minimum, pas, annulation, horizon
-- [ ] Test d'intégration de concurrence (deux réservations simultanées)
+- [x] Moteur de disponibilités (`modules/booking`) et tests unitaires Vitest
+- [x] API `GET /api/availability` et `POST /api/bookings` (erreur 409 en cas de conflit)
+- [x] Tunnel de réservation (`/reservation`) et branchement des boutons « Prendre rendez-vous »
+- [x] Lien sécurisé `cancel_token` : consultation, annulation, demande de modification
+- [x] Règles paramétrables (`setting`) : pause, délai minimum, pas, annulation, horizon
+- [x] Test d'intégration de concurrence (deux réservations simultanées)
 
 ### Étape 4 — Planning administrateur
 - [ ] Calendrier FullCalendar (jour, semaine, mois) et déplacement par glisser-déposer

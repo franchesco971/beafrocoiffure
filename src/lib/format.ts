@@ -17,3 +17,13 @@ export function formatPrice(cents: number) {
 
 export const priceLabel = (mode: PriceMode, cents: number | null) =>
   mode === "FIXED" && cents !== null ? formatPrice(cents) : "Sur devis";
+
+/** Total d'une sélection : somme des tarifs fixes, « Sur devis » dès qu'une prestation est sur devis. */
+export function totalPriceLabel(services: { priceMode: PriceMode; priceCents: number | null }[]) {
+  let total = 0;
+  for (const { priceMode, priceCents } of services) {
+    if (priceMode !== "FIXED" || priceCents === null) return "Sur devis";
+    total += priceCents;
+  }
+  return formatPrice(total);
+}

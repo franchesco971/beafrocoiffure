@@ -1,10 +1,11 @@
+import Link from "next/link";
 import { Arrow } from "@/components/ui/Arrow";
 
 const LABEL = "Prendre rendez-vous · Réservation en ligne · ";
 
 export function SpinBadge({ href, className = "" }: { href: string; className?: string }) {
   return (
-    <a
+    <Link
       href={href}
       aria-label="Prendre rendez-vous"
       className={`group relative grid size-32 place-items-center rounded-full bg-gold text-ink shadow-[0_20px_60px_-15px_rgba(217,164,65,0.55)] transition-transform duration-500 ease-out-expo hover:scale-105 sm:size-40 ${className}`}
@@ -22,6 +23,6 @@ export function SpinBadge({ href, className = "" }: { href: string; className?: 
       <span className="relative grid size-12 place-items-center rounded-full bg-ink text-gold transition-transform duration-500 ease-out-expo group-hover:rotate-45 sm:size-14">
         <Arrow className="size-5" />
       </span>
-    </a>
+    </Link>
   );
 }
