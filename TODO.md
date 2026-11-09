@@ -40,10 +40,10 @@ Basé sur le plan de réalisation du [document technique](DOCUMENT-TECHNIQUE.md#
 - [x] Test d'intégration de concurrence (deux réservations simultanées)
 
 ### Étape 4 — Planning administrateur
-- [ ] Calendrier FullCalendar (jour, semaine, mois) et déplacement par glisser-déposer
-- [ ] Horaires hebdomadaires, congés, absences, blocages ponctuels
-- [ ] Création, modification et annulation manuelles de rendez-vous
-- [ ] Fiche client et historique
+- [x] Calendrier FullCalendar (jour, semaine, mois) et déplacement par glisser-déposer
+- [x] Horaires hebdomadaires, congés, absences, blocages ponctuels
+- [x] Création, modification et annulation manuelles de rendez-vous
+- [x] Fiche client et historique
 
 ### Étape 5 — Notifications
 - [ ] File d'envoi (`notification`) et worker avec reprise en cas d'échec

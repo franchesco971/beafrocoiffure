@@ -6,15 +6,17 @@ export function AdminPage({
   title,
   back,
   actions,
+  wide,
   children,
 }: {
   title: string;
   back?: { href: string; label: string };
   actions?: ReactNode;
+  wide?: boolean;
   children: ReactNode;
 }) {
   return (
-    <main className="mx-auto max-w-5xl px-5 py-12 lg:px-10">
+    <main className={`mx-auto px-5 py-12 lg:px-10 ${wide ? "max-w-7xl" : "max-w-5xl"}`}>
       {back && (
         <Link
           href={back.href}

@@ -54,6 +54,12 @@ export function dateKeyOf(instant: Date): DateKey {
   return `${p.year}-${String(p.month).padStart(2, "0")}-${String(p.day).padStart(2, "0")}`;
 }
 
+/** Heure de Paris de cet instant au format `HH:MM`. */
+export function timeKeyOf(instant: Date): string {
+  const p = wallClockParts(instant.getTime());
+  return `${String(p.hour).padStart(2, "0")}:${String(p.minute).padStart(2, "0")}`;
+}
+
 export function addDays(key: DateKey, days: number): DateKey {
   const { year, month, day } = requireDateKey(key);
   return new Date(Date.UTC(year, month - 1, day + days)).toISOString().slice(0, 10);

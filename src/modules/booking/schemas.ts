@@ -31,17 +31,27 @@ export const availabilityQuerySchema = z
     path: ["date"],
   });
 
-const personName = z.string().trim().min(1, "Champ requis.").max(80, "80 caractères maximum.");
+export const personName = z.string().trim().min(1, "Champ requis.").max(80, "80 caractères maximum.");
+
+export const phoneNumber = z
+  .string()
+  .trim()
+  .regex(/^\+?[0-9 ().-]{6,20}$/, "Numéro de téléphone invalide.");
+
+/** Coordonnées saisies par l'administration : l'adresse e-mail est facultative (chaîne vide). */
+export const clientContactSchema = z.object({
+  firstName: personName,
+  lastName: personName,
+  phone: phoneNumber,
+  email: z.union([z.literal(""), z.email("Adresse e-mail invalide.").max(254, "254 caractères maximum.")]),
+});
 
 export const newBookingSchema = z.object({
   serviceIds,
   startsAt: z.iso.datetime("Créneau invalide."),
   firstName: personName,
   lastName: personName,
-  phone: z
-    .string()
-    .trim()
-    .regex(/^\+?[0-9 ().-]{6,20}$/, "Numéro de téléphone invalide."),
+  phone: phoneNumber,
   email: z
     .email("Adresse e-mail invalide.")
     .max(254, "254 caractères maximum.")

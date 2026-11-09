@@ -5,10 +5,13 @@ import { db } from "@/lib/db";
 import { blockMinutes, computeSlots, type Interval, type WorkWindow } from "./availability";
 import { RULE_KEYS, resolveRules, type BookingRules } from "./rules";
 
-type Client = Prisma.TransactionClient;
+export type Client = Prisma.TransactionClient;
 
 // Rendez-vous qui occupent le planning ; identique au prédicat de la contrainte SQL `booking_no_overlap`.
-const ACTIVE_STATUSES: BookingStatus[] = ["PENDING", "CONFIRMED"];
+export const ACTIVE_STATUSES: BookingStatus[] = ["PENDING", "CONFIRMED"];
+
+// Verrou consultatif : une seule écriture de planning à la fois (un seul praticien) ; libéré en fin de transaction.
+export const lockBookings = (client: Client) => client.$executeRaw`SELECT pg_advisory_xact_lock(7305001)`;
 
 export class SlotUnavailableError extends Error {
   constructor() {
@@ -40,10 +43,10 @@ export class BookingLockedError extends Error {
 
 // ───────── Lectures ─────────
 
-const loadRules = async (client: Client): Promise<BookingRules> =>
+export const loadRules = async (client: Client): Promise<BookingRules> =>
   resolveRules(await client.setting.findMany({ where: { key: { in: Object.values(RULE_KEYS) } } }));
 
-async function loadServices(client: Client, ids: number[]) {
+export async function loadServices(client: Client, ids: number[]) {
   const services = await client.service.findMany({
     where: { id: { in: ids }, isActive: true },
     select: { id: true, durationMin: true, priceCents: true, requiresValidation: true },
@@ -104,7 +107,7 @@ function slotsPerDay(
   return days;
 }
 
-const totalDuration = (services: { durationMin: number }[]) =>
+export const totalDuration = (services: { durationMin: number }[]) =>
   services.reduce((total, service) => total + service.durationMin, 0);
 
 /** Créneaux libres jour par jour pour les prestations choisies, de `from` à `to` inclus. */
@@ -143,8 +146,7 @@ export function isOverlapViolation(error: unknown): boolean {
 export async function createBooking(input: NewBooking, now = new Date()) {
   try {
     return await db.$transaction(async (tx) => {
-      // Verrou consultatif : une seule création à la fois (un seul praticien) ; libéré en fin de transaction.
-      await tx.$executeRaw`SELECT pg_advisory_xact_lock(7305001)`;
+      await lockBookings(tx);
 
       const services = await loadServices(tx, input.serviceIds);
       const rules = await loadRules(tx);

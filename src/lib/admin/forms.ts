@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { isDateKey, parisToUtc } from "@/lib/date";
 
 export type FormState = {
   errors?: Record<string, string[] | undefined>;
@@ -26,6 +27,14 @@ export const eurosToCents = (value: string) =>
 
 export const centsToEuros = (cents: number | null) =>
   cents === null ? "" : (cents / 100).toFixed(cents % 100 === 0 ? 0 : 2).replace(".", ",");
+
+// Jour (`<input type="date">`) et heure (`<input type="time">`) saisis, lus en heure de Paris.
+export const dateField = z.string().refine(isDateKey, "Date invalide.");
+export const timeField = z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/, "Heure invalide.");
+
+export const toMinutes = (time: string) => Number(time.slice(0, 2)) * 60 + Number(time.slice(3, 5));
+
+export const parisInstant = (date: string, time: string) => parisToUtc(date, toMinutes(time));
 
 export const isUniqueViolation = (error: unknown) =>
   typeof error === "object" && error !== null && "code" in error && error.code === "P2002";

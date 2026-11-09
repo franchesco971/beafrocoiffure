@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { addDays, dateKeyOf, isoWeekday, monthBounds, parisToUtc, parseDateKey, shiftMonth } from "./date";
+import { addDays, dateKeyOf, isoWeekday, monthBounds, parisToUtc, parseDateKey, shiftMonth, timeKeyOf } from "./date";
 
 describe("parisToUtc", () => {
   it("applique UTC+1 en hiver", () => {
@@ -29,6 +29,14 @@ describe("dateKeyOf", () => {
     expect(dateKeyOf(new Date("2026-01-14T23:30:00Z"))).toBe("2026-01-15");
     expect(dateKeyOf(new Date("2026-07-14T22:30:00Z"))).toBe("2026-07-15");
     expect(dateKeyOf(new Date("2026-07-14T21:30:00Z"))).toBe("2026-07-14");
+  });
+});
+
+describe("timeKeyOf", () => {
+  it("renvoie l'heure de Paris, hiver comme été", () => {
+    expect(timeKeyOf(new Date("2026-01-15T08:05:00Z"))).toBe("09:05");
+    expect(timeKeyOf(new Date("2026-07-15T07:05:00Z"))).toBe("09:05");
+    expect(timeKeyOf(new Date("2026-07-14T22:00:00Z"))).toBe("00:00");
   });
 });
 

@@ -9,10 +9,12 @@ export function DeleteForm({
   action,
   label,
   confirmMessage,
+  pendingLabel = "Suppression…",
 }: {
   action: (previous: FormState) => Promise<FormState>;
   label: string;
   confirmMessage: string;
+  pendingLabel?: string;
 }) {
   const [state, formAction, pending] = useActionState(action, {});
 
@@ -25,7 +27,7 @@ export function DeleteForm({
       className="space-y-3"
     >
       <Button type="submit" variant="destructive" disabled={pending} className="h-11 px-5">
-        {pending ? "Suppression…" : label}
+        {pending ? pendingLabel : label}
       </Button>
       {state.message && (
         <p role="alert" className="text-sm text-destructive">
