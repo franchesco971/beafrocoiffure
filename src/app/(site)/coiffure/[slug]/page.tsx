@@ -10,7 +10,8 @@ import { getVideoEmbed } from "@/lib/video";
 
 export async function generateStaticParams() {
   const slugs = await getHairServiceSlugs();
-  return slugs.map((slug) => ({ slug }));
+  // Cache Components exige au moins un résultat (catalogue vide ou base absente) : le slug factice donne un 404.
+  return (slugs.length > 0 ? slugs : ["_"]).map((slug) => ({ slug }));
 }
 
 export async function generateMetadata({ params }: PageProps<"/coiffure/[slug]">): Promise<Metadata> {

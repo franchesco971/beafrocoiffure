@@ -4,6 +4,9 @@ import { db } from "@/lib/db";
 // Lectures publiques mises en cache ; les actions d'administration invalident cette étiquette.
 export const CATALOG_TAG = "catalog";
 
+// Sans DATABASE_URL (build Vercel sans base), le catalogue est vide au lieu de faire échouer le prérendu.
+const hasDatabase = Boolean(process.env.DATABASE_URL);
+
 const serviceSummary = {
   slug: true,
   title: true,
@@ -17,6 +20,7 @@ export async function getHairCatalog() {
   "use cache";
   cacheTag(CATALOG_TAG);
   cacheLife("hours");
+  if (!hasDatabase) return [];
 
   return db.serviceCategory.findMany({
     where: { universe: "HAIR", services: { some: { isActive: true } } },
@@ -33,6 +37,7 @@ export async function getHairService(slug: string) {
   "use cache";
   cacheTag(CATALOG_TAG);
   cacheLife("hours");
+  if (!hasDatabase) return null;
 
   return db.service.findFirst({
     where: { slug, isActive: true, category: { universe: "HAIR" } },
@@ -51,6 +56,7 @@ export async function getHairServiceSlugs() {
   "use cache";
   cacheTag(CATALOG_TAG);
   cacheLife("hours");
+  if (!hasDatabase) return [];
 
   const services = await db.service.findMany({
     where: { isActive: true, category: { universe: "HAIR" } },
@@ -64,6 +70,7 @@ export async function getBookableCatalog() {
   "use cache";
   cacheTag(CATALOG_TAG);
   cacheLife("hours");
+  if (!hasDatabase) return [];
 
   return db.serviceCategory.findMany({
     where: { services: { some: { isActive: true } } },
