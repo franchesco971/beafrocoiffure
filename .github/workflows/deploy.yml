@@ -8,8 +8,8 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     steps:
-      - name: Deploy to Vercel
-        uses: Gourav2609/vercel-auto-deploy@v1
+      - name: Vercel Auto Deploy
+        uses: Gourav2609/vercel-auto-deploy@v1.0.0
         with:
           exclude-authors: 'franchesco971'
           vercel-deploy-hook: ${{ secrets.VERCEL_DEPLOY_HOOK }}
