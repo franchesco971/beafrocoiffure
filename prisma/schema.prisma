@@ -402,6 +402,8 @@ model Media {
   id                Int       @id @default(autoincrement())
   type              MediaType
   url               String
+  // Photo « avant » d'un avant/après : `url` est alors la photo « après ».
+  beforeUrl         String?   @map("before_url")
   alt               String?
   galleryCategoryId Int?      @map("gallery_category_id")
   serviceId         Int?      @map("service_id")

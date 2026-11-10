@@ -65,6 +65,20 @@ export async function getHairServiceSlugs() {
   return services.map(({ slug }) => slug);
 }
 
+// Prestations de l'univers Beauté & Bien-être (réservables, sans page de détail).
+export async function getWellnessServices() {
+  "use cache";
+  cacheTag(CATALOG_TAG);
+  cacheLife("hours");
+  if (!hasDatabase) return [];
+
+  return db.service.findMany({
+    where: { isActive: true, category: { universe: "WELLNESS" } },
+    orderBy: [{ category: { position: "asc" } }, { position: "asc" }, { id: "asc" }],
+    select: serviceSummary,
+  });
+}
+
 // Toutes les prestations réservables (coiffure et beauté), pour le tunnel de réservation.
 export async function getBookableCatalog() {
   "use cache";

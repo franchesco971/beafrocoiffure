@@ -4,6 +4,8 @@ import { isDateKey, parisToUtc } from "@/lib/date";
 export type FormState = {
   errors?: Record<string, string[] | undefined>;
   message?: string;
+  /** Enregistrement réussi sans redirection (formulaire réaffiché avec ses valeurs). */
+  saved?: boolean;
   /** Valeurs soumises, pour réafficher le formulaire après une erreur. */
   values?: Record<string, string>;
 };

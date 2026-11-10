@@ -109,4 +109,10 @@ export const formatDay = (instant: Date | string) => dayFormat.format(new Date(i
 export const formatTime = (instant: Date | string) => timeFormat.format(new Date(instant)).replace(":", " h ");
 export const formatDateTime = (instant: Date | string) => `${formatDay(instant)} à ${formatTime(instant)}`;
 
+const dayOfMonthFormat = new Intl.DateTimeFormat("fr-FR", { timeZone: TIME_ZONE, day: "numeric" });
+const shortMonthFormat = new Intl.DateTimeFormat("fr-FR", { timeZone: TIME_ZONE, month: "short" });
+
+export const formatDayOfMonth = (instant: Date | string) => dayOfMonthFormat.format(new Date(instant));
+export const formatShortMonth = (instant: Date | string) => shortMonthFormat.format(new Date(instant));
+
 export const minutesToMs = (minutes: number) => minutes * MINUTE_MS;

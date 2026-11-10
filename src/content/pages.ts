@@ -1,0 +1,73 @@
+import { z } from "zod";
+
+// Textes modifiables depuis l'administration (table `page_content`) : schémas de validation et valeurs par défaut.
+
+const isHttpsUrl = (value: string) => {
+  try {
+    return new URL(value).protocol === "https:";
+  } catch {
+    return false;
+  }
+};
+
+const optionalLink = z
+  .string()
+  .trim()
+  .max(300, "300 caractères maximum.")
+  .refine((value) => value === "" || isHttpsUrl(value), "Lien https invalide.");
+
+export const contactContentSchema = z.object({
+  email: z
+    .string()
+    .trim()
+    .max(254, "254 caractères maximum.")
+    .refine((value) => value === "" || z.email().safeParse(value).success, "E-mail invalide."),
+  phone: z.string().trim().max(30, "30 caractères maximum."),
+  address: z.string().trim().max(300, "300 caractères maximum."),
+  instagram: optionalLink,
+  facebook: optionalLink,
+  tiktok: optionalLink,
+});
+
+export const WELLNESS_OFFER_SLOTS = 4;
+
+export const wellnessContentSchema = z.object({
+  intro: z.string().trim().max(1500, "1 500 caractères maximum."),
+  offers: z
+    .array(
+      z.object({
+        title: z.string().trim().min(1).max(80, "80 caractères maximum."),
+        text: z.string().trim().max(600, "600 caractères maximum."),
+      }),
+    )
+    .max(WELLNESS_OFFER_SLOTS),
+});
+
+export const CONTENT_SCHEMAS = {
+  "site.contact": contactContentSchema,
+  "page.wellness": wellnessContentSchema,
+} as const;
+
+export type ContentKey = keyof typeof CONTENT_SCHEMAS;
+export type ContentMap = { [K in ContentKey]: z.infer<(typeof CONTENT_SCHEMAS)[K]> };
+
+export const DEFAULT_CONTENT: ContentMap = {
+  "site.contact": { email: "", phone: "", address: "", instagram: "", facebook: "", tiktok: "" },
+  "page.wellness": {
+    intro: "Une conseillère indépendante à vos côtés pour choisir, tester et adopter les bons produits.",
+    offers: [
+      {
+        title: "Conseil sur les produits",
+        text: "Un avis franc et adapté à votre peau, vos cheveux et votre routine, pour choisir ce qui vous convient vraiment.",
+      },
+      {
+        title: "Séances de testing de produits",
+        text: "Essayez avant d’acheter : des séances dédiées pour tester des produits en situation, avec des retours précis.",
+      },
+      {
+        title: "Accompagnements personnalisés",
+        text: "Un suivi sur mesure pour construire, à votre rythme, une routine beauté et bien-être qui vous ressemble.",
+      },
+    ],
+  },
+};

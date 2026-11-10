@@ -53,12 +53,12 @@ Basé sur le plan de réalisation du [document technique](DOCUMENT-TECHNIQUE.md#
 - [ ] Templates React Email
 
 ### Étape 6 — Contenus et vie du site
-- [ ] Espace Beauté & Bien-être (testing, accompagnements, mention conseil non médical)
-- [ ] Galerie : upload d'images et vidéos, catégories, avant/après
-- [ ] Événements : pages publiques, inscriptions, gestion des places
-- [ ] Avis clients avec modération
-- [ ] Formulaire de contact
-- [ ] Back-office : tableau de bord, clients, contenus modifiables, statistiques, paramètres
+- [x] Espace Beauté & Bien-être (testing, accompagnements, mention conseil non médical)
+- [x] Galerie : upload d'images et vidéos, catégories, avant/après
+- [x] Événements : pages publiques, inscriptions, gestion des places
+- [x] Avis clients avec modération
+- [x] Formulaire de contact
+- [x] Back-office : tableau de bord, clients, contenus modifiables, statistiques, paramètres
 
 ### Étape 7 — Conformité, SEO, sécurité
 - [ ] Pages légales (mentions, confidentialité, CGV/CGR) éditables

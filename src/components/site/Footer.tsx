@@ -1,12 +1,22 @@
 import Link from "next/link";
 import { Logo } from "@/components/brand/Logo";
-import { NAV_LINKS } from "@/lib/site";
+import { getContent } from "@/lib/content";
+import { FOOTER_LINKS } from "@/lib/site";
 
-export function Footer() {
+const SOCIALS = [
+  { key: "instagram", label: "Instagram" },
+  { key: "facebook", label: "Facebook" },
+  { key: "tiktok", label: "TikTok" },
+] as const;
+
+export async function Footer() {
+  const contact = await getContent("site.contact");
+  const socials = SOCIALS.filter(({ key }) => contact[key]);
+
   return (
-    <footer id="contact" className="relative overflow-hidden border-t border-bone/10 bg-ink-2 pb-28 pt-20 sm:pb-12">
+    <footer className="relative overflow-hidden border-t border-bone/10 bg-ink-2 pb-28 pt-20 sm:pb-12">
       <div className="mx-auto grid max-w-[88rem] gap-14 px-5 lg:grid-cols-12 lg:px-10">
-        <div className="lg:col-span-6">
+        <div className="lg:col-span-5">
           <p className="display max-w-[16ch] text-4xl text-bone md:text-5xl">
             Prenez soin de votre <em>couronne.</em>
           </p>
@@ -16,10 +26,10 @@ export function Footer() {
           </p>
         </div>
 
-        <nav aria-label="Pied de page" className="lg:col-span-3 lg:col-start-8">
+        <nav aria-label="Pied de page" className="lg:col-span-3 lg:col-start-7">
           <p className="eyebrow">Explorer</p>
           <ul className="mt-5 space-y-3">
-            {NAV_LINKS.map((link) => (
+            {FOOTER_LINKS.map((link) => (
               <li key={link.href}>
                 <Link href={link.href} className="text-bone transition-colors hover:text-gold">
                   {link.label}
@@ -29,9 +39,42 @@ export function Footer() {
           </ul>
         </nav>
 
-        <div className="lg:col-span-2">
-          <p className="eyebrow">En ligne</p>
-          <p className="mt-5 text-bone">www.beafrocoiffure.fr</p>
+        <div className="lg:col-span-3">
+          <p className="eyebrow">Contact</p>
+          <ul className="mt-5 space-y-3 text-bone">
+            {contact.email && (
+              <li>
+                <a href={`mailto:${contact.email}`} className="transition-colors hover:text-gold">
+                  {contact.email}
+                </a>
+              </li>
+            )}
+            {contact.phone && (
+              <li>
+                <a href={`tel:${contact.phone.replace(/[^\d+]/g, "")}`} className="transition-colors hover:text-gold">
+                  {contact.phone}
+                </a>
+              </li>
+            )}
+            {contact.address && <li className="whitespace-pre-line text-bone-dim">{contact.address}</li>}
+            {socials.map(({ key, label }) => (
+              <li key={key}>
+                <a
+                  href={contact[key]}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="transition-colors hover:text-gold"
+                >
+                  {label}
+                </a>
+              </li>
+            ))}
+            <li>
+              <Link href="/contact" className="text-gold transition-colors hover:text-bone">
+                Nous écrire
+              </Link>
+            </li>
+          </ul>
         </div>
       </div>
 

@@ -55,6 +55,13 @@ export function Universes() {
             <p className="mt-8 text-sm text-bone-dim">
               Conseil beauté et bien-être : ne constitue pas une prestation médicale.
             </p>
+            <Link
+              href="/beaute-bien-etre"
+              className="group mt-8 inline-flex items-center gap-3 border-b border-gold pb-1 text-sm font-medium uppercase tracking-[0.18em] text-gold transition-colors hover:border-bone hover:text-bone"
+            >
+              Découvrir l’espace bien-être
+              <Arrow className="size-4 transition-transform duration-500 ease-out-expo group-hover:rotate-45" />
+            </Link>
           </article>
         </div>
       </div>

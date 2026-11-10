@@ -30,12 +30,23 @@ export const RULE_KEYS = {
   maxAdvanceDays: "booking.max_advance_days",
 } as const satisfies Record<keyof BookingRules, string>;
 
+// Bornes de chaque règle, partagées avec le formulaire des paramètres.
+export const RULE_LIMITS = {
+  bufferMinutes: { min: 0, max: 240 },
+  minNoticeHours: { min: 0, max: 720 },
+  slotStepMinutes: { min: 5, max: 240 },
+  cancelLimitHours: { min: 0, max: 720 },
+  maxAdvanceDays: { min: 1, max: 365 },
+} as const satisfies Record<keyof BookingRules, { min: number; max: number }>;
+
+const ruleSchema = ({ min, max }: { min: number; max: number }) => z.number().int().min(min).max(max);
+
 const RULE_SCHEMAS = {
-  bufferMinutes: z.number().int().min(0).max(240),
-  minNoticeHours: z.number().int().min(0).max(720),
-  slotStepMinutes: z.number().int().min(5).max(240),
-  cancelLimitHours: z.number().int().min(0).max(720),
-  maxAdvanceDays: z.number().int().min(1).max(365),
+  bufferMinutes: ruleSchema(RULE_LIMITS.bufferMinutes),
+  minNoticeHours: ruleSchema(RULE_LIMITS.minNoticeHours),
+  slotStepMinutes: ruleSchema(RULE_LIMITS.slotStepMinutes),
+  cancelLimitHours: ruleSchema(RULE_LIMITS.cancelLimitHours),
+  maxAdvanceDays: ruleSchema(RULE_LIMITS.maxAdvanceDays),
 } as const satisfies Record<keyof BookingRules, z.ZodType<number>>;
 
 /** Règles effectives : valeur enregistrée si elle est valide, sinon valeur par défaut. */

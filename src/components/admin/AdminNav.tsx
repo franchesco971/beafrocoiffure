@@ -12,11 +12,22 @@ const LINKS = [
     label: "Prestations",
     match: (path: string) => path.startsWith("/admin/prestations") || path.startsWith("/admin/categories"),
   },
+  { href: "/admin/galerie", label: "Galerie", match: (path: string) => path.startsWith("/admin/galerie") },
+  { href: "/admin/evenements", label: "Événements", match: (path: string) => path.startsWith("/admin/evenements") },
+  { href: "/admin/avis", label: "Avis", match: (path: string) => path.startsWith("/admin/avis") },
+  { href: "/admin/messages", label: "Messages", match: (path: string) => path.startsWith("/admin/messages") },
+  { href: "/admin/contenus", label: "Contenus", match: (path: string) => path.startsWith("/admin/contenus") },
+  {
+    href: "/admin/statistiques",
+    label: "Statistiques",
+    match: (path: string) => path.startsWith("/admin/statistiques"),
+  },
+  { href: "/admin/parametres", label: "Paramètres", match: (path: string) => path.startsWith("/admin/parametres") },
 ];
 
 export function AdminNavLinks({ pathname }: { pathname: string | null }) {
   return (
-    <nav aria-label="Administration" className="flex items-center gap-6 text-sm">
+    <nav aria-label="Administration" className="flex w-full flex-wrap items-center gap-x-6 gap-y-2 text-sm">
       {LINKS.map((link) => {
         const current = pathname !== null && link.match(pathname);
         return (
