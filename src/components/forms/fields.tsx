@@ -1,4 +1,18 @@
+import Link from "next/link";
 import type { ReactNode } from "react";
+
+// S'ouvre dans un nouvel onglet pour ne pas perdre la saisie en cours.
+export function PrivacyLink() {
+  return (
+    <Link
+      href="/confidentialite"
+      target="_blank"
+      className="text-gold underline underline-offset-4 transition-colors hover:text-bone"
+    >
+      politique de confidentialité
+    </Link>
+  );
+}
 
 // Champ piège : invisible et hors tabulation, un robot le remplit (lu avec `FormData`, nom `website`).
 export function Honeypot() {

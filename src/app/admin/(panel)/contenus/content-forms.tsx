@@ -83,6 +83,40 @@ export function ContactContentForm({ action, defaults }: { action: Action; defau
   );
 }
 
+export function LegalContentForm({
+  action,
+  contentKey,
+  defaults,
+}: {
+  action: Action;
+  contentKey: string;
+  defaults: Record<string, string>;
+}) {
+  const [state, formAction, pending] = useActionState(action, {});
+  const values = state.values ?? defaults;
+  const errors = state.errors ?? {};
+  const id = `body-${contentKey}`;
+  const invalid = Boolean(errors.body?.[0]);
+
+  return (
+    <form action={formAction} className="space-y-6">
+      <Field label="Texte" name={id} errors={errors.body}>
+        <Textarea
+          id={id}
+          name="body"
+          defaultValue={values.body}
+          maxLength={30000}
+          rows={18}
+          className="font-mono text-sm"
+          aria-invalid={invalid}
+          aria-describedby={describedBy(id, false, invalid)}
+        />
+      </Field>
+      <Footer state={state} pending={pending} />
+    </form>
+  );
+}
+
 export function WellnessContentForm({ action, defaults }: { action: Action; defaults: Record<string, string> }) {
   const [state, formAction, pending] = useActionState(action, {});
   const values = state.values ?? defaults;

@@ -1,4 +1,6 @@
 import { Field, describedBy } from "@/components/admin/Field";
+import { PrivacyLink } from "@/components/forms/fields";
+import { Turnstile, type TurnstileState } from "@/components/forms/Turnstile";
 import { Arrow } from "@/components/ui/Arrow";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -16,6 +18,7 @@ export function ContactStep({
   pending,
   failure,
   requiresValidation,
+  captcha,
 }: {
   contact: Contact;
   onChange: (patch: Partial<Contact>) => void;
@@ -23,6 +26,7 @@ export function ContactStep({
   pending: boolean;
   failure: ApiFailure | null;
   requiresValidation: boolean;
+  captcha: TurnstileState;
 }) {
   const errors = failure?.fields ?? {};
   const invalid = (name: string) => Boolean(errors[name]?.[0]);
@@ -140,7 +144,9 @@ export function ContactStep({
             className="mt-1 size-5 shrink-0 accent-gold"
           />
           <span>
-            J’accepte que mes données soient enregistrées pour gérer ma réservation et me contacter à ce sujet.
+            J’accepte que mes données soient enregistrées pour gérer ma réservation et me contacter à ce sujet (
+            <PrivacyLink />
+            ).
           </span>
         </label>
         {errors.consent?.[0] && (
@@ -156,13 +162,15 @@ export function ContactStep({
         </p>
       )}
 
+      <Turnstile {...captcha.widgetProps} />
+
       {showGeneral && (
         <p role="alert" className="text-sm text-destructive">
           {failure.message}
         </p>
       )}
 
-      <button type="submit" disabled={pending} className={PRIMARY_BUTTON}>
+      <button type="submit" disabled={pending || !captcha.ready} className={PRIMARY_BUTTON}>
         {pending ? "Envoi…" : requiresValidation ? "Envoyer ma demande" : "Confirmer mon rendez-vous"}
         <Arrow className="size-4 transition-transform duration-500 ease-out-expo group-hover:rotate-45" />
       </button>

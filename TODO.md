@@ -61,11 +61,11 @@ Basé sur le plan de réalisation du [document technique](DOCUMENT-TECHNIQUE.md#
 - [x] Back-office : tableau de bord, clients, contenus modifiables, statistiques, paramètres
 
 ### Étape 7 — Conformité, SEO, sécurité
-- [ ] Pages légales (mentions, confidentialité, CGV/CGR) éditables
-- [ ] RGPD : consentement, export et anonymisation, durée de conservation
-- [ ] SEO : métadonnées par page, `sitemap.xml`, `robots.txt`, données structurées Schema.org
-- [ ] Sécurité : rate limiting, anti-spam (honeypot / Turnstile), en-têtes CSP
-- [ ] Performance : Lighthouse Performance ≥ 90, SEO ≥ 95, Accessibilité ≥ 90
+- [x] Pages légales (mentions, confidentialité, CGV/CGR) éditables
+- [x] RGPD : consentement, export et anonymisation, durée de conservation
+- [x] SEO : métadonnées par page, `sitemap.xml`, `robots.txt`, données structurées Schema.org
+- [x] Sécurité : rate limiting, anti-spam (honeypot / Turnstile), en-têtes CSP
+- [ ] Performance : Lighthouse Performance ≥ 90, SEO ≥ 95, Accessibilité ≥ 90 (SEO 100 et accessibilité 96-100 atteints ; performance mobile 82-88 en simulation, 97 en throttling réel : à remesurer en production)
 
 ### Étape 8 — Recette et mise en production
 - [ ] Tests E2E Playwright (réservation complète, connexion admin, responsive)

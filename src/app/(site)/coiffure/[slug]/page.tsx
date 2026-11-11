@@ -3,8 +3,10 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
 import { Arrow } from "@/components/ui/Arrow";
+import { JsonLd } from "@/components/seo/JsonLd";
 import { getHairService, getHairServiceSlugs } from "@/lib/catalog";
 import { formatDuration, formatPrice, priceLabel } from "@/lib/format";
+import { serviceJsonLd } from "@/lib/seo";
 import { BOOKING_HREF } from "@/lib/site";
 import { getVideoEmbed } from "@/lib/video";
 
@@ -23,7 +25,6 @@ export async function generateMetadata({ params }: PageProps<"/coiffure/[slug]">
     title: service.title,
     description: service.description || undefined,
     alternates: { canonical: `/coiffure/${slug}` },
-    openGraph: { title: service.title, description: service.description || undefined, url: `/coiffure/${slug}` },
   };
 }
 
@@ -58,6 +59,7 @@ async function ServiceDetails({ params }: Pick<PageProps<"/coiffure/[slug]">, "p
 
   return (
     <>
+      <JsonLd data={serviceJsonLd({ ...service, slug })} />
       <nav aria-label="Fil d’Ariane" className="text-xs uppercase tracking-[0.18em] text-bone-dim">
         <Link href="/" className="transition-colors hover:text-gold">
           Accueil

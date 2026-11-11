@@ -3,7 +3,8 @@
 import type { FormEvent } from "react";
 import { Field, describedBy } from "@/components/admin/Field";
 import { PRIMARY_BUTTON } from "@/components/booking/styles";
-import { Honeypot } from "@/components/forms/fields";
+import { Honeypot, PrivacyLink } from "@/components/forms/fields";
+import { Turnstile } from "@/components/forms/Turnstile";
 import { generalError, useApiSubmit } from "@/components/forms/useApiSubmit";
 import { Arrow } from "@/components/ui/Arrow";
 import { Input } from "@/components/ui/input";
@@ -12,7 +13,7 @@ import { Textarea } from "@/components/ui/textarea";
 const FIELDS = ["author", "rating", "text"] as const;
 
 export function ReviewForm() {
-  const { submit, pending, failure, data } = useApiSubmit("/api/reviews");
+  const { submit, pending, failure, data, captcha } = useApiSubmit("/api/reviews");
   const errors = failure?.fields ?? {};
   const invalid = (name: string) => Boolean(errors[name]?.[0]);
   const general = generalError(failure, FIELDS);
@@ -91,8 +92,11 @@ export function ReviewForm() {
       <Honeypot />
 
       <p className="text-sm text-bone-dim">
-        Votre prénom et votre avis seront publiés sur le site après relecture. Aucune autre donnée n’est enregistrée.
+        Votre prénom et votre avis seront publiés sur le site après relecture. Aucune autre donnée n’est enregistrée :
+        voir la <PrivacyLink />.
       </p>
+
+      <Turnstile {...captcha.widgetProps} />
 
       {general && (
         <p role="alert" className="text-sm text-destructive">
@@ -100,7 +104,7 @@ export function ReviewForm() {
         </p>
       )}
 
-      <button type="submit" disabled={pending} className={PRIMARY_BUTTON}>
+      <button type="submit" disabled={pending || !captcha.ready} className={PRIMARY_BUTTON}>
         {pending ? "Envoi…" : "Publier mon avis"}
         <Arrow className="size-4 transition-transform duration-500 ease-out-expo group-hover:rotate-45" />
       </button>

@@ -1,5 +1,6 @@
 "use server";
 
+import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { fieldErrors, readText, type FormState } from "@/lib/admin/forms";
 import { audit } from "@/lib/audit";
@@ -9,6 +10,8 @@ import { db } from "@/lib/db";
 import { createRateLimiter } from "@/lib/rate-limit";
 import { ADMIN_EMAIL_KEY } from "@/lib/settings";
 import { RULE_KEYS, RULE_LIMITS, type BookingRules } from "@/modules/booking/rules";
+import { purgeExpiredData } from "@/modules/privacy/privacy.service";
+import { RETENTION_KEY, RETENTION_LIMITS } from "@/modules/privacy/retention";
 
 const rule = ({ min, max }: { min: number; max: number }) =>
   z
@@ -67,6 +70,37 @@ export async function saveAdminEmail(_previous: FormState, formData: FormData): 
   });
   await audit(admin.id, "SETTINGS_ADMIN_EMAIL", "setting", ADMIN_EMAIL_KEY);
   return { saved: true, values: { adminEmail: value } };
+}
+
+const retentionSchema = z.object({ retentionMonths: rule(RETENTION_LIMITS) });
+
+export async function saveRetention(_previous: FormState, formData: FormData): Promise<FormState> {
+  const admin = await requireRole("ADMIN");
+
+  const values = { retentionMonths: readText(formData, "retentionMonths") };
+  const parsed = retentionSchema.safeParse(values);
+  if (!parsed.success) return { errors: fieldErrors(parsed.error), values };
+
+  const value = parsed.data.retentionMonths;
+  await db.setting.upsert({
+    where: { key: RETENTION_KEY },
+    update: { value },
+    create: { key: RETENTION_KEY, value },
+  });
+  await audit(admin.id, "SETTINGS_RETENTION", "setting", RETENTION_KEY);
+  revalidatePath("/admin/parametres");
+  return { saved: true, values };
+}
+
+export async function runRetentionPurge(): Promise<FormState> {
+  const admin = await requireRole("ADMIN");
+
+  const { clients, messages, registrations } = await purgeExpiredData(new Date(), admin.id);
+  revalidatePath("/admin/parametres");
+  return {
+    saved: true,
+    message: `${clients} fiche(s) anonymisée(s), ${messages} message(s) supprimé(s), ${registrations} inscription(s) anonymisée(s).`,
+  };
 }
 
 const MAX_PASSWORD_LENGTH = 256;

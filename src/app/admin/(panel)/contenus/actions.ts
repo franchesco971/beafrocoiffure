@@ -1,7 +1,13 @@
 "use server";
 
 import { updateTag } from "next/cache";
-import { WELLNESS_OFFER_SLOTS, contactContentSchema, wellnessContentSchema } from "@/content/pages";
+import {
+  WELLNESS_OFFER_SLOTS,
+  contactContentSchema,
+  isLegalKey,
+  legalContentSchema,
+  wellnessContentSchema,
+} from "@/content/pages";
 import { fieldErrors, readText, type FormState } from "@/lib/admin/forms";
 import { audit } from "@/lib/audit";
 import { requireRole } from "@/lib/auth/guard";
@@ -18,6 +24,20 @@ export async function saveContactContent(_previous: FormState, formData: FormDat
 
   await saveContent("site.contact", parsed.data);
   await audit(admin.id, "CONTENT_UPDATE", "page_content", "site.contact");
+  updateTag(CONTENT_TAG);
+  return { saved: true, values };
+}
+
+export async function saveLegalContent(key: string, _previous: FormState, formData: FormData): Promise<FormState> {
+  const admin = await requireRole("ADMIN");
+  if (!isLegalKey(key)) throw new Error("Page inconnue");
+
+  const values = { body: readText(formData, "body").replace(/\r\n?/g, "\n") };
+  const parsed = legalContentSchema.safeParse(values);
+  if (!parsed.success) return { errors: fieldErrors(parsed.error), values };
+
+  await saveContent(key, parsed.data);
+  await audit(admin.id, "CONTENT_UPDATE", "page_content", key);
   updateTag(CONTENT_TAG);
   return { saved: true, values };
 }

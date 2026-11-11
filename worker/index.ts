@@ -1,11 +1,24 @@
 import "dotenv/config";
 import { db } from "@/lib/db";
+import { purgeExpiredData } from "@/modules/privacy/privacy.service";
 
 const INTERVAL_MS = Number(process.env.WORKER_INTERVAL_MS ?? 30_000);
+const DAY_MS = 24 * 60 * 60_000;
+const RETRY_MS = 60 * 60_000;
+
+// Prochaine purge RGPD (durée de conservation) : quotidienne, réessayée après une heure en cas d'échec.
+let nextRetentionRun = 0;
 
 // Étape 5 : traiter la file `notification` (e-mails, rappels J-1) avec reprise en cas d'échec.
 async function tick() {
   await db.$queryRaw`SELECT 1`;
+
+  if (Date.now() >= nextRetentionRun) {
+    nextRetentionRun = Date.now() + RETRY_MS;
+    const purged = await purgeExpiredData();
+    nextRetentionRun = Date.now() + DAY_MS;
+    console.log("[worker] purge RGPD", purged);
+  }
 }
 
 let timer: NodeJS.Timeout | undefined;

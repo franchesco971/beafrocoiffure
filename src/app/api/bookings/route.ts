@@ -1,11 +1,12 @@
 import type { NextRequest } from "next/server";
-import { apiError, json, readJson, tooManyRequests, validationError } from "@/lib/api";
+import { apiError, captchaFailed, json, readJson, tooManyRequests, validationError } from "@/lib/api";
 import { createRateLimiter } from "@/lib/rate-limit";
 import { clientIp } from "@/lib/request";
+import { verifyTurnstile } from "@/lib/turnstile";
 import { createBooking, ServicesUnavailableError, SlotUnavailableError } from "@/modules/booking/booking.service";
 import { newBookingSchema } from "@/modules/booking/schemas";
 
-// Anti-abus : 10 demandes valides par adresse IP et par heure (Turnstile viendra à l'étape 7).
+// Anti-abus : 10 demandes valides par adresse IP et par heure, en plus du champ piège et de Turnstile (optionnel).
 const limiter = createRateLimiter({ name: "bookings", limit: 10, windowMs: 60 * 60_000 });
 
 export async function POST(request: NextRequest) {
@@ -19,6 +20,7 @@ export async function POST(request: NextRequest) {
   const parsed = newBookingSchema.safeParse(body);
   if (!parsed.success) return validationError(parsed.error);
   limiter.hit(ip);
+  if (!(await verifyTurnstile(body, ip))) return captchaFailed();
   const { website, startsAt, ...data } = parsed.data;
 
   // Robot détecté : réponse de succès sans rien enregistrer.

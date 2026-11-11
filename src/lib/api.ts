@@ -7,6 +7,9 @@ export const json = (body: unknown, status = 200) => Response.json(body, { statu
 export const apiError = (status: number, error: string, message: string, extra?: Record<string, unknown>) =>
   json({ error, message, ...extra }, status);
 
+export const captchaFailed = () =>
+  apiError(400, "captcha_failed", "La vérification anti-robot a échoué. Patientez un instant puis réessayez.");
+
 export const tooManyRequests = (retryAfterMs: number) =>
   Response.json(
     { error: "too_many_requests", message: "Trop de requêtes. Réessayez dans quelques instants." },

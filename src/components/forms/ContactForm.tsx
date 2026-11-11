@@ -3,7 +3,8 @@
 import type { FormEvent } from "react";
 import { Field, describedBy } from "@/components/admin/Field";
 import { PRIMARY_BUTTON } from "@/components/booking/styles";
-import { ConsentField, Honeypot } from "@/components/forms/fields";
+import { ConsentField, Honeypot, PrivacyLink } from "@/components/forms/fields";
+import { Turnstile } from "@/components/forms/Turnstile";
 import { generalError, useApiSubmit } from "@/components/forms/useApiSubmit";
 import { Arrow } from "@/components/ui/Arrow";
 import { Input } from "@/components/ui/input";
@@ -12,7 +13,7 @@ import { Textarea } from "@/components/ui/textarea";
 const FIELDS = ["name", "email", "message", "consent"] as const;
 
 export function ContactForm() {
-  const { submit, pending, failure, data } = useApiSubmit("/api/contact");
+  const { submit, pending, failure, data, captcha } = useApiSubmit("/api/contact");
   const errors = failure?.fields ?? {};
   const invalid = (name: string) => Boolean(errors[name]?.[0]);
   const general = generalError(failure, FIELDS);
@@ -88,8 +89,11 @@ export function ContactForm() {
       <Honeypot />
 
       <ConsentField error={errors.consent?.[0]}>
-        J’accepte que mes données soient utilisées pour répondre à ma demande.
+        J’accepte que mes données soient utilisées pour répondre à ma demande (<PrivacyLink />
+        ).
       </ConsentField>
+
+      <Turnstile {...captcha.widgetProps} />
 
       {general && (
         <p role="alert" className="text-sm text-destructive">
@@ -97,7 +101,7 @@ export function ContactForm() {
         </p>
       )}
 
-      <button type="submit" disabled={pending} className={PRIMARY_BUTTON}>
+      <button type="submit" disabled={pending || !captcha.ready} className={PRIMARY_BUTTON}>
         {pending ? "Envoi…" : "Envoyer le message"}
         <Arrow className="size-4 transition-transform duration-500 ease-out-expo group-hover:rotate-45" />
       </button>

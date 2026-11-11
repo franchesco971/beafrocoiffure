@@ -2,24 +2,30 @@
 
 import { useState } from "react";
 import { callApi, type ApiFailure } from "@/components/booking/api";
+import { useTurnstile } from "@/components/forms/Turnstile";
 
 /** Envoi JSON d'un formulaire public vers une route `/api` : état d'envoi, erreur éventuelle et réponse. */
 export function useApiSubmit<T = unknown>(url: string) {
   const [pending, setPending] = useState(false);
   const [failure, setFailure] = useState<ApiFailure | null>(null);
   const [data, setData] = useState<T | null>(null);
+  const captcha = useTurnstile();
 
-  async function submit(body: unknown) {
+  async function submit(body: Record<string, unknown>) {
     setPending(true);
     setFailure(null);
-    const result = await callApi<T>(url, { method: "POST", body });
+    const result = await callApi<T>(url, {
+      method: "POST",
+      body: captcha.enabled ? { ...body, turnstileToken: captcha.token } : body,
+    });
+    if (captcha.enabled) captcha.renew();
     setPending(false);
     if (result.ok) setData(result.data);
     else setFailure(result);
     return result.ok;
   }
 
-  return { submit, pending, failure, data };
+  return { submit, pending, failure, data, captcha };
 }
 
 /** Message d'erreur général : seulement si aucun des champs affichés n'est concerné. */

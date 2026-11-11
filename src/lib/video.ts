@@ -24,7 +24,7 @@ export function getVideoEmbed(rawUrl: string): VideoEmbed | null {
 
   if (url.hostname === "vimeo.com" || url.hostname === "www.vimeo.com") {
     const id = url.pathname.match(/^\/(\d+)$/)?.[1];
-    return id ? { kind: "iframe", src: `https://player.vimeo.com/video/${id}` } : null;
+    return id ? { kind: "iframe", src: `https://player.vimeo.com/video/${id}?dnt=1` } : null;
   }
 
   return VIDEO_FILE.test(url.pathname) ? { kind: "file", src: url.toString() } : null;

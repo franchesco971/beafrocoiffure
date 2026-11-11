@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { Logo } from "@/components/brand/Logo";
 import { getContent } from "@/lib/content";
-import { FOOTER_LINKS } from "@/lib/site";
+import { FOOTER_LINKS, LEGAL_LINKS } from "@/lib/site";
 
 const SOCIALS = [
   { key: "instagram", label: "Instagram" },
@@ -80,9 +80,20 @@ export async function Footer() {
 
       <div className="mx-auto mt-16 max-w-[88rem] px-5 lg:px-10">
         <Logo decorative className="w-full text-bone/[0.07]" />
-        <p className="mt-8 border-t border-bone/10 pt-6 text-sm text-bone-dim">
-          BeAfro Coiffure. Le conseil beauté et bien-être ne constitue pas une prestation médicale.
-        </p>
+        <div className="mt-8 flex flex-wrap items-center justify-between gap-x-10 gap-y-4 border-t border-bone/10 pt-6 text-sm text-bone-dim">
+          <p>BeAfro Coiffure. Le conseil beauté et bien-être ne constitue pas une prestation médicale.</p>
+          <nav aria-label="Informations légales">
+            <ul className="flex flex-wrap gap-x-6 gap-y-2">
+              {LEGAL_LINKS.map((link) => (
+                <li key={link.href}>
+                  <Link href={link.href} className="transition-colors hover:text-gold">
+                    {link.label}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </nav>
+        </div>
       </div>
     </footer>
   );

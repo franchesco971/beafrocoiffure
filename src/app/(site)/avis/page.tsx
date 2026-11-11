@@ -1,7 +1,9 @@
 import type { Metadata } from "next";
 import { ReviewForm } from "@/components/reviews/ReviewForm";
 import { Stars } from "@/components/reviews/Stars";
+import { JsonLd } from "@/components/seo/JsonLd";
 import { getPublishedReviews } from "@/lib/reviews";
+import { reviewsJsonLd } from "@/lib/seo";
 
 export const metadata: Metadata = {
   title: "Avis clients",
@@ -16,6 +18,7 @@ export default async function ReviewsPage() {
 
   return (
     <section className="px-5 pb-28 pt-36 lg:px-10 lg:pb-40 lg:pt-44">
+      {reviews.length > 0 && <JsonLd data={reviewsJsonLd(reviews, average, count)} />}
       <div className="mx-auto max-w-[88rem]">
         <header className="max-w-3xl">
           <p className="eyebrow">Avis clients</p>

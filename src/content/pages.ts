@@ -1,4 +1,7 @@
 import { z } from "zod";
+import { DEFAULT_LEGAL, LEGAL_KEYS } from "@/content/legal";
+
+export { LEGAL_KEYS, LEGAL_PAGES, LEGAL_PLACEHOLDER, type LegalKey } from "@/content/legal";
 
 // Textes modifiables depuis l'administration (table `page_content`) : schémas de validation et valeurs par défaut.
 
@@ -43,15 +46,27 @@ export const wellnessContentSchema = z.object({
     .max(WELLNESS_OFFER_SLOTS),
 });
 
+export const legalContentSchema = z.object({
+  // Les retours à la ligne des formulaires (\r\n) sont normalisés avant l'enregistrement.
+  body: z.string().trim().min(1, "Le texte ne peut pas être vide.").max(30_000, "30 000 caractères maximum."),
+});
+
 export const CONTENT_SCHEMAS = {
   "site.contact": contactContentSchema,
   "page.wellness": wellnessContentSchema,
+  "legal.mentions": legalContentSchema,
+  "legal.privacy": legalContentSchema,
+  "legal.terms": legalContentSchema,
 } as const;
 
 export type ContentKey = keyof typeof CONTENT_SCHEMAS;
 export type ContentMap = { [K in ContentKey]: z.infer<(typeof CONTENT_SCHEMAS)[K]> };
 
+export const isLegalKey = (key: string): key is (typeof LEGAL_KEYS)[number] =>
+  (LEGAL_KEYS as readonly string[]).includes(key);
+
 export const DEFAULT_CONTENT: ContentMap = {
+  ...DEFAULT_LEGAL,
   "site.contact": { email: "", phone: "", address: "", instagram: "", facebook: "", tiktok: "" },
   "page.wellness": {
     intro: "Une conseillère indépendante à vos côtés pour choisir, tester et adopter les bons produits.",

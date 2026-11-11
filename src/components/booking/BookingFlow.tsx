@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { BookableCatalog } from "@/lib/catalog";
 import { dateKeyOf, shiftMonth } from "@/lib/date";
+import { useTurnstile } from "@/components/forms/Turnstile";
 import { callApi, type ApiFailure } from "./api";
 import { ContactStep } from "./ContactStep";
 import { Done } from "./Done";
@@ -47,6 +48,7 @@ export function BookingFlow({ catalog, initialServiceIds }: { catalog: BookableC
   const [pending, setPending] = useState(false);
   const [failure, setFailure] = useState<ApiFailure | null>(null);
   const [created, setCreated] = useState<CreatedBooking | null>(null);
+  const captcha = useTurnstile();
 
   const latestRequest = useRef(0);
   const heading = useRef<HTMLHeadingElement>(null);
@@ -117,8 +119,15 @@ export function BookingFlow({ catalog, initialServiceIds }: { catalog: BookableC
     const { notes, ...rest } = contact;
     const result = await callApi<CreatedBooking>("/api/bookings", {
       method: "POST",
-      body: { ...rest, notes: notes || undefined, serviceIds: selected, startsAt: slot },
+      body: {
+        ...rest,
+        notes: notes || undefined,
+        serviceIds: selected,
+        startsAt: slot,
+        ...(captcha.enabled && { turnstileToken: captcha.token }),
+      },
     });
+    if (captcha.enabled) captcha.renew();
     setPending(false);
 
     if (result.ok) {
@@ -170,7 +179,7 @@ export function BookingFlow({ catalog, initialServiceIds }: { catalog: BookableC
                     {content}
                   </button>
                 ) : (
-                  <span className={index === stepIndex ? "text-gold" : "text-bone-dim/60"}>{content}</span>
+                  <span className={index === stepIndex ? "text-gold" : "text-bone-dim/80"}>{content}</span>
                 )}
               </li>
             );
@@ -221,6 +230,7 @@ export function BookingFlow({ catalog, initialServiceIds }: { catalog: BookableC
               pending={pending}
               failure={failure}
               requiresValidation={chosen.some((service) => service.requiresValidation)}
+              captcha={captcha}
             />
           )}
         </div>

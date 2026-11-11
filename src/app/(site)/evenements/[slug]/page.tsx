@@ -5,8 +5,10 @@ import { connection } from "next/server";
 import { Suspense } from "react";
 import { EventRegistrationForm } from "@/components/events/EventRegistrationForm";
 import { eventPriceLabel } from "@/components/events/EventList";
+import { JsonLd } from "@/components/seo/JsonLd";
 import { formatDay, formatTime } from "@/lib/date";
 import { getPublishedEvent, getPublishedEventSlugs } from "@/lib/events";
+import { eventJsonLd } from "@/lib/seo";
 import { getSeatsLeft } from "@/modules/events/events.service";
 
 export async function generateStaticParams() {
@@ -24,7 +26,6 @@ export async function generateMetadata({ params }: PageProps<"/evenements/[slug]
     title: event.title,
     description: event.description || undefined,
     alternates: { canonical: `/evenements/${slug}` },
-    openGraph: { title: event.title, description: event.description || undefined, url: `/evenements/${slug}` },
   };
 }
 
@@ -57,6 +58,7 @@ async function EventDetails({ params }: Pick<PageProps<"/evenements/[slug]">, "p
 
   return (
     <>
+      <JsonLd data={eventJsonLd(event)} />
       <nav aria-label="Fil d’Ariane" className="text-xs uppercase tracking-[0.18em] text-bone-dim">
         <Link href="/" className="transition-colors hover:text-gold">
           Accueil

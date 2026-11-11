@@ -3,7 +3,8 @@
 import type { FormEvent } from "react";
 import { Field, describedBy } from "@/components/admin/Field";
 import { PRIMARY_BUTTON } from "@/components/booking/styles";
-import { ConsentField, Honeypot } from "@/components/forms/fields";
+import { ConsentField, Honeypot, PrivacyLink } from "@/components/forms/fields";
+import { Turnstile } from "@/components/forms/Turnstile";
 import { generalError, useApiSubmit } from "@/components/forms/useApiSubmit";
 import { Arrow } from "@/components/ui/Arrow";
 import { Input } from "@/components/ui/input";
@@ -11,7 +12,7 @@ import { Input } from "@/components/ui/input";
 const FIELDS = ["name", "email", "phone", "consent"] as const;
 
 export function EventRegistrationForm({ eventId }: { eventId: number }) {
-  const { submit, pending, failure, data } = useApiSubmit(`/api/events/${eventId}/register`);
+  const { submit, pending, failure, data, captcha } = useApiSubmit(`/api/events/${eventId}/register`);
   const errors = failure?.fields ?? {};
   const invalid = (name: string) => Boolean(errors[name]?.[0]);
   const general = generalError(failure, FIELDS);
@@ -81,8 +82,11 @@ export function EventRegistrationForm({ eventId }: { eventId: number }) {
       <Honeypot />
 
       <ConsentField error={errors.consent?.[0]}>
-        J’accepte que mes données soient enregistrées pour gérer mon inscription à cet événement.
+        J’accepte que mes données soient enregistrées pour gérer mon inscription à cet événement (<PrivacyLink />
+        ).
       </ConsentField>
+
+      <Turnstile {...captcha.widgetProps} />
 
       {general && (
         <p role="alert" className="text-sm text-destructive">
@@ -90,7 +94,7 @@ export function EventRegistrationForm({ eventId }: { eventId: number }) {
         </p>
       )}
 
-      <button type="submit" disabled={pending} className={`${PRIMARY_BUTTON} w-full`}>
+      <button type="submit" disabled={pending || !captcha.ready} className={`${PRIMARY_BUTTON} w-full`}>
         {pending ? "Envoi…" : "Je m’inscris"}
         <Arrow className="size-4 transition-transform duration-500 ease-out-expo group-hover:rotate-45" />
       </button>

@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Fraunces, Jost } from "next/font/google";
+import { SITE_NAME, SITE_URL } from "@/lib/seo";
 import "./globals.css";
 
 const fraunces = Fraunces({
@@ -17,7 +18,7 @@ const jost = Jost({
 });
 
 export const metadata: Metadata = {
-  metadataBase: new URL("https://www.beafrocoiffure.fr"),
+  metadataBase: new URL(SITE_URL),
   title: {
     default: "BeAfro Coiffure & Beauté — Locks, MicroLocks et cheveux texturés",
     template: "%s | BeAfro Coiffure",
@@ -27,8 +28,9 @@ export const metadata: Metadata = {
   openGraph: {
     type: "website",
     locale: "fr_FR",
-    siteName: "BeAfro Coiffure",
+    siteName: SITE_NAME,
   },
+  twitter: { card: "summary_large_image" },
 };
 
 export const viewport: Viewport = {

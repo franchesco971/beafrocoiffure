@@ -4,11 +4,12 @@ import { notFound } from "next/navigation";
 import { Suspense } from "react";
 import { AdminLoading, AdminPage } from "@/components/admin/AdminPage";
 import { BookingStatusBadge } from "@/components/admin/BookingStatus";
+import { DeleteForm } from "@/components/admin/DeleteForm";
 import { buttonVariants } from "@/components/ui/button";
 import { requireAdmin } from "@/lib/auth/guard";
 import { formatDateTime } from "@/lib/date";
 import { db } from "@/lib/db";
-import { saveClient } from "../actions";
+import { anonymizeClientAction, saveClient } from "../actions";
 import { ClientForm } from "../client-form";
 
 export const metadata: Metadata = { title: "Fiche cliente" };
@@ -24,7 +25,7 @@ export default function ClientPage(props: PageProps<"/admin/clients/[id]">) {
 }
 
 async function ClientDetail({ params }: Pick<PageProps<"/admin/clients/[id]">, "params">) {
-  await requireAdmin();
+  const admin = await requireAdmin();
   const id = Number((await params).id);
   if (!Number.isInteger(id)) notFound();
 
@@ -60,27 +61,63 @@ async function ClientDetail({ params }: Pick<PageProps<"/admin/clients/[id]">, "
           <h2 className="display text-3xl text-bone">
             {client.firstName} {client.lastName}
           </h2>
-          <Link
-            href={`/admin/planning/rendez-vous/nouveau?client=${client.id}`}
-            className={buttonVariants({ className: "h-11 px-5" })}
-          >
-            Nouveau rendez-vous
-          </Link>
+          {!client.anonymizedAt && (
+            <Link
+              href={`/admin/planning/rendez-vous/nouveau?client=${client.id}`}
+              className={buttonVariants({ className: "h-11 px-5" })}
+            >
+              Nouveau rendez-vous
+            </Link>
+          )}
         </div>
-        {client.anonymizedAt && (
-          <p className="text-sm text-bone-dim">Cette fiche a été anonymisée : les coordonnées ne sont plus fiables.</p>
+        {client.anonymizedAt ? (
+          <p className="text-sm text-bone-dim">
+            Cette fiche a été anonymisée le {formatDateTime(client.anonymizedAt)} : les coordonnées ont été effacées,
+            les rendez-vous sont conservés pour les statistiques.
+          </p>
+        ) : (
+          <ClientForm action={saveClient.bind(null, id)} defaults={defaults} />
         )}
-        <ClientForm action={saveClient.bind(null, id)} defaults={defaults} />
         <p className="text-sm text-bone-dim">
           Fiche créée le {formatDateTime(client.createdAt)}
-          {client.consentAt
-            ? ` · consentement recueilli le ${formatDateTime(client.consentAt)}`
-            : " · consentement non recueilli en ligne"}
+          {!client.anonymizedAt &&
+            (client.consentAt
+              ? ` · consentement recueilli le ${formatDateTime(client.consentAt)}`
+              : " · consentement non recueilli en ligne")}
         </p>
       </section>
 
       <BookingList title="À venir" bookings={upcoming} empty="Aucun rendez-vous à venir." />
       <BookingList title="Historique" bookings={history} empty="Aucun rendez-vous passé." />
+
+      {admin.role === "ADMIN" && (
+        <section aria-labelledby="donnees" className="border-t border-bone/10 pt-12">
+          <h2 id="donnees" className="display text-2xl text-bone">
+            Données personnelles
+          </h2>
+          <p className="mt-2 max-w-[60ch] text-sm text-bone-dim">
+            Droit d’accès : téléchargez toutes les données de cette cliente. Droit à l’effacement : l’anonymisation
+            supprime ses coordonnées, notes et messages, mais conserve les rendez-vous pour les statistiques.
+          </p>
+          <div className="mt-6 flex flex-wrap items-start gap-4">
+            <a
+              href={`/api/admin/clients/${client.id}/export`}
+              download
+              className={buttonVariants({ variant: "outline", className: "h-11 px-5" })}
+            >
+              Exporter les données (JSON)
+            </a>
+            {!client.anonymizedAt && (
+              <DeleteForm
+                action={anonymizeClientAction.bind(null, id)}
+                label="Anonymiser la fiche"
+                pendingLabel="Anonymisation…"
+                confirmMessage="Anonymiser définitivement cette fiche ? Les coordonnées, notes et messages seront effacés, l’action est irréversible."
+              />
+            )}
+          </div>
+        </section>
+      )}
     </div>
   );
 }

@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import type { FormState } from "@/lib/admin/forms";
 import { RULE_LIMITS } from "@/modules/booking/rules";
+import { RETENTION_LIMITS } from "@/modules/privacy/retention";
 
 type Action = (previous: FormState, formData: FormData) => Promise<FormState>;
 
@@ -104,6 +105,64 @@ export function AdminEmailForm({ action, defaults }: { action: Action; defaults:
         />
       </Field>
       <Footer state={state} pending={pending} />
+    </form>
+  );
+}
+
+export function RetentionForm({ action, defaults }: { action: Action; defaults: Record<string, string> }) {
+  const [state, formAction, pending] = useActionState(action, {});
+  const values = state.values ?? defaults;
+  const errors = state.errors ?? {};
+  const invalid = Boolean(errors.retentionMonths?.[0]);
+
+  return (
+    <form action={formAction} className="space-y-6">
+      <Field
+        label="Durée de conservation (mois)"
+        name="retentionMonths"
+        hint="Après le dernier rendez-vous, message ou événement. Gardez la politique de confidentialité cohérente avec cette durée."
+        errors={errors.retentionMonths}
+      >
+        <Input
+          id="retentionMonths"
+          name="retentionMonths"
+          type="number"
+          inputMode="numeric"
+          min={RETENTION_LIMITS.min}
+          max={RETENTION_LIMITS.max}
+          defaultValue={values.retentionMonths}
+          required
+          className="h-11 max-w-xs"
+          aria-invalid={invalid}
+          aria-describedby={describedBy("retentionMonths", true, invalid)}
+        />
+      </Field>
+      <Footer state={state} pending={pending} />
+    </form>
+  );
+}
+
+export function PurgeForm({ action, expiredCount }: { action: Action; expiredCount: number }) {
+  const [state, formAction, pending] = useActionState(action, {});
+
+  return (
+    <form
+      action={formAction}
+      onSubmit={(event) => {
+        if (!window.confirm("Anonymiser ou supprimer maintenant les données arrivées au terme de la conservation ?")) {
+          event.preventDefault();
+        }
+      }}
+      className="space-y-3"
+    >
+      <Button type="submit" variant="destructive" disabled={pending || expiredCount === 0} className="h-11 px-5">
+        {pending ? "Purge…" : "Purger maintenant"}
+      </Button>
+      {state.message && (
+        <p role="status" className="text-sm text-gold">
+          {state.message}
+        </p>
+      )}
     </form>
   );
 }

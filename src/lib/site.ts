@@ -14,3 +14,9 @@ export const FOOTER_LINKS = [
   { label: "Avis", href: "/avis" },
   { label: "Réservation", href: BOOKING_HREF },
 ] as const;
+
+export const LEGAL_LINKS = [
+  { label: "Mentions légales", href: "/mentions-legales" },
+  { label: "Confidentialité", href: "/confidentialite" },
+  { label: "CGV et réservation", href: "/cgv" },
+] as const;

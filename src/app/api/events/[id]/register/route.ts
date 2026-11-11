@@ -1,7 +1,8 @@
 import type { NextRequest } from "next/server";
-import { apiError, json, readJson, tooManyRequests, validationError } from "@/lib/api";
+import { apiError, captchaFailed, json, readJson, tooManyRequests, validationError } from "@/lib/api";
 import { createRateLimiter } from "@/lib/rate-limit";
 import { clientIp } from "@/lib/request";
+import { verifyTurnstile } from "@/lib/turnstile";
 import {
   AlreadyRegisteredError,
   EventFullError,
@@ -10,7 +11,7 @@ import {
 } from "@/modules/events/events.service";
 import { registrationSchema } from "@/modules/events/schemas";
 
-// Anti-abus : 10 inscriptions valides par adresse IP et par heure (Turnstile viendra à l'étape 7).
+// Anti-abus : 10 inscriptions valides par adresse IP et par heure, en plus du champ piège et de Turnstile (optionnel).
 const limiter = createRateLimiter({ name: "event-registrations", limit: 10, windowMs: 60 * 60_000 });
 
 export async function POST(request: NextRequest, ctx: RouteContext<"/api/events/[id]/register">) {
@@ -27,6 +28,7 @@ export async function POST(request: NextRequest, ctx: RouteContext<"/api/events/
   const parsed = registrationSchema.safeParse(body);
   if (!parsed.success) return validationError(parsed.error);
   limiter.hit(ip);
+  if (!(await verifyTurnstile(body, ip))) return captchaFailed();
   const { website, name, email, phone } = parsed.data;
 
   // Robot détecté : réponse de succès sans rien enregistrer.
