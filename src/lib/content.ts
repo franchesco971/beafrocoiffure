@@ -1,4 +1,4 @@
-import { cacheLife, cacheTag } from "next/cache";
+import { cacheTag } from "next/cache";
 import { CONTENT_SCHEMAS, DEFAULT_CONTENT, type ContentKey, type ContentMap } from "@/content/pages";
 import { db } from "@/lib/db";
 
@@ -14,7 +14,6 @@ const hasDatabase = Boolean(process.env.DATABASE_URL);
 export async function getContent<K extends ContentKey>(key: K): Promise<ContentMap[K]> {
   "use cache";
   cacheTag(CONTENT_TAG);
-  cacheLife("hours");
   if (!hasDatabase) return DEFAULT_CONTENT[key];
 
   const row = await db.pageContent.findUnique({ where: { key_locale: { key, locale: LOCALE } } });

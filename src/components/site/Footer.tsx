@@ -81,7 +81,14 @@ export async function Footer() {
       <div className="mx-auto mt-16 max-w-[88rem] px-5 lg:px-10">
         <Logo decorative className="w-full text-bone/[0.07]" />
         <div className="mt-8 flex flex-wrap items-center justify-between gap-x-10 gap-y-4 border-t border-bone/10 pt-6 text-sm text-bone-dim">
-          <p>BeAfro Coiffure. Le conseil beauté et bien-être ne constitue pas une prestation médicale.</p>
+          <p>
+            BeAfro Coiffure. Le conseil beauté et bien-être ne constitue pas une prestation médicale.
+            <span aria-hidden="true"> · </span>
+            Site créé par{" "}
+            <a href="https://www.copolink.fr" target="_blank" rel="noopener noreferrer" className="transition-colors hover:text-gold">
+              Copolink
+            </a>
+          </p>
           <nav aria-label="Informations légales">
             <ul className="flex flex-wrap gap-x-6 gap-y-2">
               {LEGAL_LINKS.map((link) => (

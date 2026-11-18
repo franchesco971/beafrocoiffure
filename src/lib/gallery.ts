@@ -1,4 +1,4 @@
-import { cacheLife, cacheTag } from "next/cache";
+import { cacheTag } from "next/cache";
 import { db } from "@/lib/db";
 
 // Invalidée par l'administration de la galerie (actions serveur et téléversement).
@@ -10,7 +10,7 @@ const hasDatabase = Boolean(process.env.DATABASE_URL);
 export async function getGallery() {
   "use cache";
   cacheTag(GALLERY_TAG);
-  cacheLife("hours");
+
   if (!hasDatabase) return { categories: [], items: [] };
 
   const [categories, items] = await Promise.all([

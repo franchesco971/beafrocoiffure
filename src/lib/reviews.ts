@@ -1,4 +1,4 @@
-import { cacheLife, cacheTag } from "next/cache";
+import { cacheTag } from "next/cache";
 import { db } from "@/lib/db";
 
 // Invalidée par la modération des avis.
@@ -10,7 +10,6 @@ const hasDatabase = Boolean(process.env.DATABASE_URL);
 export async function getPublishedReviews() {
   "use cache";
   cacheTag(REVIEWS_TAG);
-  cacheLife("hours");
   if (!hasDatabase) return { reviews: [], average: null, count: 0 };
 
   const where = { status: "APPROVED" } as const;
