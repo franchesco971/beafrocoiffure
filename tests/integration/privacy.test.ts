@@ -1,5 +1,6 @@
 import { afterAll, describe, expect, it } from "vitest";
 import { db } from "@/lib/db";
+import { newCancelToken } from "@/modules/booking/booking.service";
 import {
   ANONYMOUS_EMAIL,
   ClientHasUpcomingBookingsError,
@@ -34,7 +35,7 @@ async function createClient(name: string, createdAt = new Date("2098-01-01T00:00
   return client;
 }
 
-// Un jour distinct par rendez-vous : la contrainte anti-chevauchement est globale.
+// Un jour distinct par rendez-vous : le planning est commun à tous les clients.
 const createBooking = (clientId: number, startsAt: Date, status: "COMPLETED" | "PENDING" = "COMPLETED") =>
   db.booking.create({
     data: {
@@ -42,13 +43,14 @@ const createBooking = (clientId: number, startsAt: Date, status: "COMPLETED" | "
       status,
       startsAt,
       endsAt: new Date(startsAt.getTime() + 3_600_000),
+      cancelToken: newCancelToken(),
       notes: "Allergie au henné",
       address: "12 rue des Test",
       changeRequest: "Plutôt jeudi",
     },
   });
 
-run("données personnelles : export, anonymisation, conservation (base PostgreSQL)", () => {
+run("données personnelles : export, anonymisation, conservation (base MySQL)", () => {
   afterAll(async () => {
     await db.booking.deleteMany({ where: { clientId: { in: clientIds } } });
     await db.client.deleteMany({ where: { id: { in: clientIds } } });

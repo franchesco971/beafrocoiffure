@@ -35,7 +35,7 @@ const input = (overrides: Partial<AdminBookingInput> & Pick<AdminBookingInput, "
   ...overrides,
 });
 
-run("planning administrateur (base PostgreSQL)", () => {
+run("planning administrateur (base MySQL)", () => {
   beforeAll(async () => {
     categoryId = (
       await db.serviceCategory.create({

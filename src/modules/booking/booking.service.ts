@@ -1,17 +1,22 @@
+import { randomBytes } from "node:crypto";
 import type { Prisma } from "@/generated/prisma/client";
 import type { BookingStatus } from "@/generated/prisma/enums";
 import { addDays, dateKeyOf, isoWeekday, minutesToMs, parisToUtc, type DateKey } from "@/lib/date";
 import { db } from "@/lib/db";
+import { LOCKED_TRANSACTION, LOCK_BOOKINGS, lockRow } from "@/lib/lock";
 import { blockMinutes, computeSlots, type Interval, type WorkWindow } from "./availability";
 import { RULE_KEYS, resolveRules, type BookingRules } from "./rules";
 
 export type Client = Prisma.TransactionClient;
 
-// Rendez-vous qui occupent le planning ; identique au prédicat de la contrainte SQL `booking_no_overlap`.
+// Rendez-vous qui occupent le planning.
 export const ACTIVE_STATUSES: BookingStatus[] = ["PENDING", "CONFIRMED"];
 
-// Verrou consultatif : une seule écriture de planning à la fois (un seul praticien) ; libéré en fin de transaction.
-export const lockBookings = (client: Client) => client.$executeRaw`SELECT pg_advisory_xact_lock(7305001)`;
+// Une seule écriture de planning à la fois (un seul praticien) ; libéré en fin de transaction.
+export const lockBookings = (client: Client) => lockRow(client, LOCK_BOOKINGS);
+
+// 256 bits aléatoires : le lien d'annulation ne doit pas être devinable.
+export const newCancelToken = () => randomBytes(32).toString("hex");
 
 export class SlotUnavailableError extends Error {
   constructor() {
@@ -131,64 +136,52 @@ export type NewBooking = {
   notes?: string | null;
 };
 
-// Violation de la contrainte d'exclusion PostgreSQL (SQLSTATE 23P01), quelle que soit la forme de l'erreur Prisma.
-export function isOverlapViolation(error: unknown): boolean {
-  if (typeof error !== "object" || error === null) return false;
-  const text = [(error as Error).message, JSON.stringify((error as { meta?: unknown }).meta ?? "")].join(" ");
-  if (text.includes("booking_no_overlap") || text.includes("23P01")) return true;
-  return isOverlapViolation((error as { cause?: unknown }).cause);
-}
-
 /**
- * Crée un rendez-vous (ou une demande à valider) : la disponibilité est revalidée dans la transaction,
- * la contrainte `booking_no_overlap` constitue la seconde barrière (document technique §6.3).
+ * Crée un rendez-vous (ou une demande à valider) : le verrou de planning sérialise les écritures et la
+ * disponibilité est revalidée dans la transaction (document technique §6.3).
  */
 export async function createBooking(input: NewBooking, now = new Date()) {
-  try {
-    return await db.$transaction(async (tx) => {
-      await lockBookings(tx);
+  return db.$transaction(async (tx) => {
+    await lockBookings(tx);
 
-      const services = await loadServices(tx, input.serviceIds);
-      const rules = await loadRules(tx);
-      const durationMin = totalDuration(services);
+    const services = await loadServices(tx, input.serviceIds);
+    const rules = await loadRules(tx);
+    const durationMin = totalDuration(services);
 
-      const date = dateKeyOf(input.startsAt);
-      const schedule = await loadSchedule(tx, date, date);
-      const slots = slotsPerDay(schedule, rules, durationMin, date, date, now)[date];
-      if (!slots.some((slot) => slot.getTime() === input.startsAt.getTime())) throw new SlotUnavailableError();
+    const date = dateKeyOf(input.startsAt);
+    const schedule = await loadSchedule(tx, date, date);
+    const slots = slotsPerDay(schedule, rules, durationMin, date, date, now)[date];
+    if (!slots.some((slot) => slot.getTime() === input.startsAt.getTime())) throw new SlotUnavailableError();
 
-      const contact = { firstName: input.firstName, lastName: input.lastName, phone: input.phone };
-      const consentAt = new Date();
-      const client = await tx.client.upsert({
-        where: { email: input.email },
-        update: { ...contact, consentAt },
-        create: { ...contact, email: input.email, consentAt },
-        select: { id: true },
-      });
-
-      return tx.booking.create({
-        data: {
-          clientId: client.id,
-          status: services.some((service) => service.requiresValidation) ? "PENDING" : "CONFIRMED",
-          startsAt: input.startsAt,
-          endsAt: new Date(input.startsAt.getTime() + minutesToMs(blockMinutes(durationMin, rules))),
-          notes: input.notes || null,
-          source: "ONLINE",
-          items: {
-            create: services.map((service) => ({
-              serviceId: service.id,
-              durationMin: service.durationMin,
-              priceCents: service.priceCents,
-            })),
-          },
-        },
-        select: { id: true, status: true, startsAt: true, endsAt: true, cancelToken: true },
-      });
+    const contact = { firstName: input.firstName, lastName: input.lastName, phone: input.phone };
+    const consentAt = new Date();
+    const client = await tx.client.upsert({
+      where: { email: input.email },
+      update: { ...contact, consentAt },
+      create: { ...contact, email: input.email, consentAt },
+      select: { id: true },
     });
-  } catch (error) {
-    if (isOverlapViolation(error)) throw new SlotUnavailableError();
-    throw error;
-  }
+
+    return tx.booking.create({
+      data: {
+        clientId: client.id,
+        status: services.some((service) => service.requiresValidation) ? "PENDING" : "CONFIRMED",
+        startsAt: input.startsAt,
+        endsAt: new Date(input.startsAt.getTime() + minutesToMs(blockMinutes(durationMin, rules))),
+        notes: input.notes || null,
+        source: "ONLINE",
+        cancelToken: newCancelToken(),
+        items: {
+          create: services.map((service) => ({
+            serviceId: service.id,
+            durationMin: service.durationMin,
+            priceCents: service.priceCents,
+          })),
+        },
+      },
+      select: { id: true, status: true, startsAt: true, endsAt: true, cancelToken: true },
+    });
+  }, LOCKED_TRANSACTION);
 }
 
 // ───────── Lien sécurisé (cancel_token) ─────────

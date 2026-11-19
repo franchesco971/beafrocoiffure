@@ -1,9 +1,9 @@
 import type { Prisma } from "@/generated/prisma/client";
 import { db } from "@/lib/db";
+import { LOCKED_TRANSACTION, LOCK_REGISTRATIONS, lockRow } from "@/lib/lock";
 
-// Verrou propre aux inscriptions (celui des réservations est 7305001) : sérialise le contrôle des places.
-const lockRegistrations = (client: Prisma.TransactionClient) =>
-  client.$executeRaw`SELECT pg_advisory_xact_lock(7305002)`;
+// Verrou propre aux inscriptions (distinct de celui des réservations) : sérialise le contrôle des places.
+const lockRegistrations = (client: Prisma.TransactionClient) => lockRow(client, LOCK_REGISTRATIONS);
 
 export class EventUnavailableError extends Error {
   constructor() {
@@ -44,8 +44,9 @@ export async function registerForEvent({ eventId, name, email, phone, now = new 
     if (!event) throw new EventUnavailableError();
 
     const confirmed = { eventId, status: "CONFIRMED" } as const;
+    // La collation de la colonne ignore la casse.
     const duplicate = await tx.eventRegistration.findFirst({
-      where: { ...confirmed, email: { equals: email, mode: "insensitive" } },
+      where: { ...confirmed, email },
       select: { id: true },
     });
     if (duplicate) throw new AlreadyRegisteredError();
@@ -58,7 +59,7 @@ export async function registerForEvent({ eventId, name, email, phone, now = new 
       data: { eventId, name, email, phone: phone || null, consentAt: now },
       select: { id: true },
     });
-  });
+  }, LOCKED_TRANSACTION);
 }
 
 /** Places restantes ; null si les places sont illimitées. */

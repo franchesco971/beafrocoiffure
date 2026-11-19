@@ -1,17 +1,22 @@
 services:
   db:
-    image: postgres:16-alpine
+    image: mysql:8.4
     environment:
-      POSTGRES_USER: ${POSTGRES_USER}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-      POSTGRES_DB: ${POSTGRES_DB}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${MYSQL_DATABASE}
+      MYSQL_USER: ${MYSQL_USER}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
     volumes:
-      - pgdata:/var/lib/postgresql/data
-    ports: ["5432:5432"]
+      - mysqldata:/var/lib/mysql
+      # Droits de l'utilisateur applicatif sur les bases temporaires de `prisma migrate dev`.
+      - ./docker/mysql/init.sh:/docker-entrypoint-initdb.d/init.sh:ro
+    # 3307 côté hôte : 3306 est souvent déjà occupé par un MySQL local.
+    ports: ["3307:3306"]
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      # 127.0.0.1 (TCP) : le serveur temporaire d'initialisation n'écoute que sur le socket.
+      test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -u$$MYSQL_USER -p$$MYSQL_PASSWORD --silent"]
       interval: 5s
-      retries: 10
+      retries: 20
 
   adminer:
     image: adminer
@@ -49,4 +54,4 @@ services:
         condition: service_healthy
 
 volumes:
-  pgdata:
+  mysqldata:

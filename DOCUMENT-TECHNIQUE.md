@@ -21,19 +21,19 @@ Version 1.0 — Basé sur le cahier des charges structuré (modules M1 à M9, ph
 
 Trois options retenues. La recommandation est **Option A (Next.js)**, cohérente avec votre maîtrise de React.
 
-### Option A — Next.js + PostgreSQL (recommandée)
+### Option A — Next.js + MySQL (recommandée)
 
 | Couche | Choix |
 |---|---|
 | Framework | Next.js (App Router), TypeScript |
 | UI | Tailwind CSS + shadcn/ui, thème sombre par défaut |
-| Base de données | PostgreSQL 16 |
+| Base de données | MySQL 8.4 (InnoDB, utf8mb4) |
 | ORM | Prisma (migrations + Prisma Studio) |
 | Authentification admin | Auth.js (credentials, sessions cookies httpOnly) |
 | Validation | Zod (partagée client/serveur) |
 | Calendrier admin | FullCalendar (vues jour/semaine/mois) |
 | Emails | Nodemailer (SMTP), templates React Email |
-| Tâches planifiées (rappels) | pg-boss (file de jobs sur PostgreSQL) ou cron conteneurisé |
+| Tâches planifiées (rappels) | Worker dédié (`worker/index.ts`) ou cron conteneurisé |
 | Tests | Vitest (unitaires), Playwright (E2E) |
 
 - Avantages : une seule base de code front + back, SEO natif (SSR/SSG), vos compétences React réutilisées, écosystème riche, déploiement simple en conteneur.
@@ -86,7 +86,7 @@ flowchart LR
     V[Visiteur / Client] -->|HTTPS| P[Reverse proxy Caddy]
     A[Administrateur] -->|HTTPS| P
     P --> W[Application Next.js]
-    W --> DB[(PostgreSQL)]
+    W --> DB[(MySQL)]
     W --> S[(Stockage médias S3 / volume)]
     W --> M[Serveur SMTP]
     J[Worker jobs / rappels] --> DB
@@ -142,31 +142,32 @@ beafrocoiffure/
 | Service | Image | Rôle | Port local |
 |---|---|---|---|
 | `app` | Build du `Dockerfile` (Node 20 alpine) | Application Next.js (mode dev avec hot reload) | 3000 |
-| `db` | `postgres:16-alpine` | Base de données (volume persistant) | 5432 |
+| `db` | `mysql:8.4` | Base de données (volume persistant) | 3307 (3306 dans le réseau Docker) |
 | `adminer` | `adminer` | **Interface SQL web** pour consulter/modifier les données | 8080 |
 | `mailpit` | `axllent/mailpit` | Capture des e-mails (confirmations, rappels) en local | 8025 (UI), 1025 (SMTP) |
 | `worker` | Même image que `app` | Rappels et tâches planifiées | — |
 | `minio` (optionnel) | `minio/minio` | Stockage compatible S3 pour photos/vidéos | 9000 / 9001 |
 
-Alternative à Adminer : `dpage/pgadmin4` (plus complet : éditeur de requêtes avancé, diagrammes). Prisma Studio (`npx prisma studio`) reste disponible pour une édition visuelle table par table.
+Alternative à Adminer : `phpmyadmin` (plus complet). Prisma Studio (`npx prisma studio`) reste disponible pour une édition visuelle table par table.
 
 ### Exemple de `docker-compose.yml`
 
 ```yaml
 services:
   db:
-    image: postgres:16-alpine
+    image: mysql:8.4
     environment:
-      POSTGRES_USER: beafro
-      POSTGRES_PASSWORD: beafro_dev
-      POSTGRES_DB: beafro
+      MYSQL_ROOT_PASSWORD: beafro_root_dev
+      MYSQL_DATABASE: beafro
+      MYSQL_USER: beafro
+      MYSQL_PASSWORD: beafro_dev
     volumes:
-      - pgdata:/var/lib/postgresql/data
-    ports: ["5432:5432"]
+      - mysqldata:/var/lib/mysql
+    ports: ["3307:3306"]
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U beafro"]
+      test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -ubeafro -pbeafro_dev --silent"]
       interval: 5s
-      retries: 10
+      retries: 20
 
   adminer:
     image: adminer
@@ -200,7 +201,7 @@ services:
         condition: service_healthy
 
 volumes:
-  pgdata:
+  mysqldata:
 ```
 
 ### Démarrage
@@ -286,21 +287,15 @@ bloc_occupé  = durée_totale + pause_entre_prestations
 4. Exclure les créneaux antérieurs à `now + délai_minimum`.
 5. Retourner les créneaux en UTC ; l'affichage est converti en `Europe/Paris`.
 
-### 6.3 Prévention des doubles réservations (double barrière)
+### 6.3 Prévention des doubles réservations (verrou + revalidation)
 
-- **Applicative** : revalidation de la disponibilité dans la transaction de création.
-- **Base de données** : contrainte d'exclusion PostgreSQL.
+MySQL n'a ni contrainte d'exclusion ni verrou consultatif de transaction : la protection repose sur le seul code applicatif.
 
-```sql
-CREATE EXTENSION IF NOT EXISTS btree_gist;
+- **Verrou de planning** : toute écriture (réservation en ligne, création ou déplacement par l'administrateur) commence par `SELECT … FOR UPDATE` sur la ligne `app_lock` n° 1 (`src/lib/lock.ts`) ; le verrou est libéré au commit. Transactions en `READ COMMITTED`.
+- **Revalidation** : sous ce verrou, la disponibilité (en ligne) ou l'absence de chevauchement avec un rendez-vous actif ou un congé (administrateur) est recontrôlée avant l'insertion.
+- **Contraintes `CHECK`** : `ends_at > starts_at` sur `booking` et `time_off`.
 
-ALTER TABLE booking
-  ADD CONSTRAINT booking_no_overlap
-  EXCLUDE USING gist (tstzrange(starts_at, ends_at, '[)') WITH &&)
-  WHERE (status IN ('PENDING', 'CONFIRMED'));
-```
-
-En cas de conflit, l'API renvoie une erreur `409` et l'interface propose de nouveaux créneaux.
+Toute nouvelle écriture sur `booking` doit passer par `lockBookings`. En cas de conflit, l'API renvoie une erreur `409` et l'interface propose de nouveaux créneaux.
 
 ### 6.4 Parcours client
 
@@ -308,7 +303,7 @@ En cas de conflit, l'API renvoie une erreur `409` et l'interface propose de nouv
 sequenceDiagram
     participant C as Client
     participant W as Application
-    participant DB as PostgreSQL
+    participant DB as MySQL
     participant M as Emails
     C->>W: Choisit prestation(s)
     W->>DB: Calcule les disponibilités
@@ -409,7 +404,7 @@ sequenceDiagram
 | Transport | HTTPS obligatoire (Caddy + Let's Encrypt en production), HSTS |
 | Secrets | Variables d'environnement, jamais dans le dépôt (`.env` ignoré, `.env.example` fourni) |
 | Base de données | Utilisateur dédié à moindres privilèges, non exposée sur Internet en production |
-| Sauvegardes | `pg_dump` quotidien chiffré, rétention 14–30 jours, copie hors serveur, test de restauration trimestriel |
+| Sauvegardes | `mysqldump --single-transaction` quotidien chiffré, rétention 14–30 jours, copie hors serveur, test de restauration trimestriel |
 | Traçabilité | `audit_log` des actions administrateur |
 
 ### RGPD
@@ -462,7 +457,7 @@ Contraintes : interface responsive (usage smartphone), actions fréquentes à �
 | Niveau | Outil | Périmètre prioritaire |
 |---|---|---|
 | Unitaires | Vitest | Calcul de disponibilités, règles de pause, délais, annulation |
-| Intégration | Vitest + base PostgreSQL de test (conteneur) | Contrainte anti-chevauchement, concurrence (2 réservations simultanées) |
+| Intégration | Vitest + base MySQL de test (conteneur) | Verrou de planning, chevauchements, concurrence (2 réservations simultanées) |
 | E2E | Playwright | Parcours réservation complet, connexion admin, responsive |
 | Qualité | ESLint, Prettier, `tsc --noEmit` | Pré-commit (Husky) |
 | CI | GitHub Actions | Lint, tests, build de l'image Docker |
@@ -479,10 +474,10 @@ Contraintes : interface responsive (usage smartphone), actions fréquentes à �
 | Services | `app`, `worker`, `db`, `caddy` ; Adminer/pgAdmin **non exposé** (ou derrière VPN / authentification) |
 | Stockage médias | Objet S3-compatible |
 | Supervision | Healthcheck, logs centralisés, alertes d'indisponibilité (UptimeRobot ou équivalent) |
-| Sauvegardes | Cron `pg_dump` + sauvegarde des médias |
+| Sauvegardes | Cron `mysqldump` + sauvegarde des médias |
 | Déploiement | Build d'image en CI, `docker compose pull && up -d`, migrations Prisma au démarrage |
 
-Alternative managée : Vercel + PostgreSQL managé (Neon/Supabase) + stockage objet ; plus simple à exploiter, avec un coût récurrent et une moindre maîtrise.
+Alternative managée : Vercel + MySQL managé + stockage objet ; plus simple à exploiter, avec un coût récurrent et une moindre maîtrise.
 
 ---
 

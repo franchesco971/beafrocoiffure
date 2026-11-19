@@ -4,7 +4,7 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
+  provider = "mysql"
 }
 
 // ───────── Énumérations ─────────
@@ -127,11 +127,11 @@ enum NotificationStatus {
 
 model AdminUser {
   id           Int       @id @default(autoincrement())
-  email        String    @unique
+  email        String    @unique @db.VarChar(255)
   passwordHash String    @map("password_hash")
   role         AdminRole @default(ADMIN)
-  lastLoginAt  DateTime? @map("last_login_at") @db.Timestamptz(3)
-  createdAt    DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
+  lastLoginAt  DateTime? @map("last_login_at") @db.DateTime(3)
+  createdAt    DateTime  @default(now()) @map("created_at") @db.DateTime(3)
 
   auditLogs AuditLog[]
 
@@ -141,10 +141,10 @@ model AdminUser {
 // Vide en phase 1 : prête pour les comptes clients (phase 2).
 model UserAccount {
   id            Int      @id @default(autoincrement())
-  email         String   @unique
+  email         String   @unique @db.VarChar(255)
   passwordHash  String   @map("password_hash")
   emailVerified Boolean  @default(false) @map("email_verified")
-  createdAt     DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  createdAt     DateTime @default(now()) @map("created_at") @db.DateTime(3)
 
   clients Client[]
 
@@ -157,7 +157,7 @@ model AuditLog {
   action    String
   entity    String
   entityId  String?    @map("entity_id")
-  createdAt DateTime   @default(now()) @map("created_at") @db.Timestamptz(3)
+  createdAt DateTime   @default(now()) @map("created_at") @db.DateTime(3)
   admin     AdminUser? @relation(fields: [adminId], references: [id], onDelete: SetNull)
 
   @@index([entity, entityId])
@@ -173,12 +173,12 @@ model Client {
   firstName     String    @map("first_name")
   lastName      String    @map("last_name")
   phone         String
-  email         String?   @unique
+  email         String?   @unique @db.VarChar(255)
   userAccountId Int?      @map("user_account_id")
-  consentAt     DateTime? @map("consent_at") @db.Timestamptz(3)
-  anonymizedAt  DateTime? @map("anonymized_at") @db.Timestamptz(3)
-  createdAt     DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
-  updatedAt     DateTime  @updatedAt @map("updated_at") @db.Timestamptz(3)
+  consentAt     DateTime? @map("consent_at") @db.DateTime(3)
+  anonymizedAt  DateTime? @map("anonymized_at") @db.DateTime(3)
+  createdAt     DateTime  @default(now()) @map("created_at") @db.DateTime(3)
+  updatedAt     DateTime  @updatedAt @map("updated_at") @db.DateTime(3)
 
   userAccount UserAccount? @relation(fields: [userAccountId], references: [id], onDelete: SetNull)
   bookings    Booking[]
@@ -207,18 +207,18 @@ model Service {
   categoryId         Int       @map("category_id")
   slug               String    @unique
   title              String
-  description        String    @default("")
-  videoUrl           String?   @map("video_url")
+  description        String    @default("") @db.VarChar(2000)
+  videoUrl           String?   @map("video_url") @db.VarChar(500)
   priceMode          PriceMode @default(QUOTE) @map("price_mode")
   priceCents         Int?      @map("price_cents")
   durationMin        Int       @map("duration_min")
-  conditions         String?
+  conditions         String?   @db.Text
   requiresValidation Boolean   @default(false) @map("requires_validation")
   depositCents       Int?      @map("deposit_cents")
   isActive           Boolean   @default(true) @map("is_active")
   position           Int       @default(0)
-  createdAt          DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
-  updatedAt          DateTime  @updatedAt @map("updated_at") @db.Timestamptz(3)
+  createdAt          DateTime  @default(now()) @map("created_at") @db.DateTime(3)
+  updatedAt          DateTime  @updatedAt @map("updated_at") @db.DateTime(3)
 
   category     ServiceCategory @relation(fields: [categoryId], references: [id], onDelete: Restrict)
   bookingItems BookingItem[]
@@ -234,20 +234,20 @@ model Booking {
   id                Int           @id @default(autoincrement())
   clientId          Int           @map("client_id")
   status            BookingStatus @default(PENDING)
-  startsAt          DateTime      @map("starts_at") @db.Timestamptz(3)
+  startsAt          DateTime      @map("starts_at") @db.DateTime(3)
   // Bloc occupé : durée totale + pause entre prestations (cf. document technique §6.1).
-  endsAt            DateTime      @map("ends_at") @db.Timestamptz(3)
+  endsAt            DateTime      @map("ends_at") @db.DateTime(3)
   locationType      LocationType? @map("location_type")
-  address           String?
-  notes             String?
+  address           String?       @db.VarChar(300)
+  notes             String?       @db.Text
   // Demande de modification envoyée par le client depuis son lien sécurisé, traitée par l'administrateur.
-  changeRequest     String?       @map("change_request")
-  changeRequestedAt DateTime?     @map("change_requested_at") @db.Timestamptz(3)
-  // Jeton aléatoire (≥ 128 bits) du lien client d'annulation/modification.
-  cancelToken       String        @unique @default(dbgenerated("replace(((gen_random_uuid())::text || (gen_random_uuid())::text), '-'::text, ''::text)")) @map("cancel_token")
+  changeRequest     String?       @map("change_request") @db.Text
+  changeRequestedAt DateTime?     @map("change_requested_at") @db.DateTime(3)
+  // Jeton aléatoire (256 bits, 64 caractères hexadécimaux) du lien client d'annulation/modification, généré par l'application.
+  cancelToken       String        @unique @map("cancel_token")
   source            BookingSource @default(ONLINE)
-  createdAt         DateTime      @default(now()) @map("created_at") @db.Timestamptz(3)
-  updatedAt         DateTime      @updatedAt @map("updated_at") @db.Timestamptz(3)
+  createdAt         DateTime      @default(now()) @map("created_at") @db.DateTime(3)
+  updatedAt         DateTime      @updatedAt @map("updated_at") @db.DateTime(3)
 
   client        Client         @relation(fields: [clientId], references: [id], onDelete: Restrict)
   items         BookingItem[]
@@ -289,9 +289,9 @@ model WorkingHours {
 
 model TimeOff {
   id       Int         @id @default(autoincrement())
-  startsAt DateTime    @map("starts_at") @db.Timestamptz(3)
-  endsAt   DateTime    @map("ends_at") @db.Timestamptz(3)
-  reason   String?
+  startsAt DateTime    @map("starts_at") @db.DateTime(3)
+  endsAt   DateTime    @map("ends_at") @db.DateTime(3)
+  reason   String?     @db.VarChar(255)
   type     TimeOffType @default(BLOCK)
 
   @@index([startsAt, endsAt])
@@ -302,9 +302,16 @@ model TimeOff {
 model Setting {
   key       String   @id
   value     Json
-  updatedAt DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(3)
+  updatedAt DateTime @default(now()) @updatedAt @map("updated_at") @db.DateTime(3)
 
   @@map("setting")
+}
+
+// Verrous de transaction (`SELECT … FOR UPDATE`, cf. src/lib/lock.ts) : lignes créées par la migration initiale.
+model AppLock {
+  id Int @id
+
+  @@map("app_lock")
 }
 
 model Payment {
@@ -314,8 +321,8 @@ model Payment {
   providerRef String?       @unique @map("provider_ref")
   amountCents Int           @map("amount_cents")
   status      PaymentStatus @default(PENDING)
-  createdAt   DateTime      @default(now()) @map("created_at") @db.Timestamptz(3)
-  updatedAt   DateTime      @updatedAt @map("updated_at") @db.Timestamptz(3)
+  createdAt   DateTime      @default(now()) @map("created_at") @db.DateTime(3)
+  updatedAt   DateTime      @updatedAt @map("updated_at") @db.DateTime(3)
 
   booking Booking @relation(fields: [bookingId], references: [id], onDelete: Restrict)
 
@@ -330,12 +337,12 @@ model Notification {
   eventRegistrationId Int?                @map("event_registration_id")
   type                NotificationType
   channel             NotificationChannel @default(EMAIL)
-  recipient           String
-  scheduledAt         DateTime            @map("scheduled_at") @db.Timestamptz(3)
-  sentAt              DateTime?           @map("sent_at") @db.Timestamptz(3)
+  recipient           String              @db.VarChar(255)
+  scheduledAt         DateTime            @map("scheduled_at") @db.DateTime(3)
+  sentAt              DateTime?           @map("sent_at") @db.DateTime(3)
   status              NotificationStatus  @default(PENDING)
   attempts            Int                 @default(0)
-  lastError           String?             @map("last_error")
+  lastError           String?             @map("last_error") @db.Text
 
   booking           Booking?           @relation(fields: [bookingId], references: [id], onDelete: Cascade)
   eventRegistration EventRegistration? @relation(fields: [eventRegistrationId], references: [id], onDelete: Cascade)
@@ -352,15 +359,15 @@ model Event {
   id          Int      @id @default(autoincrement())
   slug        String   @unique
   title       String
-  description String   @default("")
-  startsAt    DateTime @map("starts_at") @db.Timestamptz(3)
-  location    String?
+  description String   @default("") @db.VarChar(4000)
+  startsAt    DateTime @map("starts_at") @db.DateTime(3)
+  location    String?  @db.VarChar(255)
   priceCents  Int?     @map("price_cents")
   // Nul = places illimitées.
   capacity    Int?
   isPublished Boolean  @default(false) @map("is_published")
-  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
-  updatedAt   DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
+  createdAt   DateTime @default(now()) @map("created_at") @db.DateTime(3)
+  updatedAt   DateTime @updatedAt @map("updated_at") @db.DateTime(3)
 
   registrations EventRegistration[]
 
@@ -372,11 +379,11 @@ model EventRegistration {
   id        Int                     @id @default(autoincrement())
   eventId   Int                     @map("event_id")
   name      String
-  email     String
+  email     String                  @db.VarChar(255)
   phone     String?
   status    EventRegistrationStatus @default(CONFIRMED)
-  consentAt DateTime                @map("consent_at") @db.Timestamptz(3)
-  createdAt DateTime                @default(now()) @map("created_at") @db.Timestamptz(3)
+  consentAt DateTime                @map("consent_at") @db.DateTime(3)
+  createdAt DateTime                @default(now()) @map("created_at") @db.DateTime(3)
 
   event         Event          @relation(fields: [eventId], references: [id], onDelete: Cascade)
   notifications Notification[]
@@ -401,15 +408,15 @@ model GalleryCategory {
 model Media {
   id                Int       @id @default(autoincrement())
   type              MediaType
-  url               String
+  url               String    @db.VarChar(500)
   // Photo « avant » d'un avant/après : `url` est alors la photo « après ».
-  beforeUrl         String?   @map("before_url")
-  alt               String?
+  beforeUrl         String?   @map("before_url") @db.VarChar(500)
+  alt               String?   @db.VarChar(255)
   galleryCategoryId Int?      @map("gallery_category_id")
   serviceId         Int?      @map("service_id")
   isBeforeAfter     Boolean   @default(false) @map("is_before_after")
   position          Int       @default(0)
-  createdAt         DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
+  createdAt         DateTime  @default(now()) @map("created_at") @db.DateTime(3)
 
   galleryCategory GalleryCategory? @relation(fields: [galleryCategoryId], references: [id], onDelete: SetNull)
   service         Service?         @relation(fields: [serviceId], references: [id], onDelete: SetNull)
@@ -423,9 +430,9 @@ model Review {
   id        Int          @id @default(autoincrement())
   author    String
   rating    Int
-  text      String
+  text      String       @db.Text
   status    ReviewStatus @default(PENDING)
-  createdAt DateTime     @default(now()) @map("created_at") @db.Timestamptz(3)
+  createdAt DateTime     @default(now()) @map("created_at") @db.DateTime(3)
 
   @@index([status])
   @@map("review")
@@ -434,11 +441,11 @@ model Review {
 model ContactMessage {
   id        Int      @id @default(autoincrement())
   name      String
-  email     String
-  message   String
-  consentAt DateTime @map("consent_at") @db.Timestamptz(3)
+  email     String   @db.VarChar(255)
+  message   String   @db.Text
+  consentAt DateTime @map("consent_at") @db.DateTime(3)
   handled   Boolean  @default(false)
-  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  createdAt DateTime @default(now()) @map("created_at") @db.DateTime(3)
 
   @@index([handled, createdAt])
   @@map("contact_message")
@@ -449,7 +456,7 @@ model PageContent {
   key       String
   locale    String   @default("fr")
   content   Json
-  updatedAt DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(3)
+  updatedAt DateTime @default(now()) @updatedAt @map("updated_at") @db.DateTime(3)
 
   @@id([key, locale])
   @@map("page_content")

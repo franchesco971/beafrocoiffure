@@ -7,7 +7,7 @@ Basé sur le plan de réalisation du [document technique](DOCUMENT-TECHNIQUE.md#
 ### Étape 0 — Initialisation
 - [x] Projet Next.js (App Router, TypeScript, Tailwind)
 - [x] Docker : `app`, `db`, `adminer`, `mailpit`
-- [x] Prisma 7 (adaptateur PostgreSQL, `prisma.config.ts`)
+- [x] Prisma 7 (adaptateur MariaDB/MySQL, `prisma.config.ts`)
 - [x] Thème noir & or, polices, logo et page d'accueil
 - [x] CI GitHub Actions (lint, tests, build de l'image Docker)
 - [x] Prettier, Husky (pré-commit : lint + `tsc --noEmit`)
@@ -17,7 +17,7 @@ Basé sur le plan de réalisation du [document technique](DOCUMENT-TECHNIQUE.md#
 
 ### Étape 1 — Modèle de données
 - [x] Schéma Prisma complet (20 tables)
-- [x] Migration initiale et contrainte anti-chevauchement `booking_no_overlap`
+- [x] Migration initiale MySQL, verrou de planning (`app_lock`) et contraintes `CHECK`
 - [x] Seed : catégories, prestations de départ, catégories de galerie
 
 ### Authentification administrateur
@@ -70,7 +70,7 @@ Basé sur le plan de réalisation du [document technique](DOCUMENT-TECHNIQUE.md#
 ### Étape 8 — Recette et mise en production
 - [ ] Tests E2E Playwright (réservation complète, connexion admin, responsive)
 - [ ] `docker-compose.prod.yml` avec Caddy (HTTPS, redirection `www`)
-- [ ] Sauvegardes `pg_dump` chiffrées et test de restauration
+- [ ] Sauvegardes `mysqldump` chiffrées et test de restauration
 - [ ] Supervision (healthcheck, alertes d'indisponibilité)
 - [ ] Mise en ligne sur `www.beafrocoiffure.fr`
 

@@ -1,15 +1,16 @@
 import type { BookingStatus, LocationType } from "@/generated/prisma/enums";
 import { minutesToMs } from "@/lib/date";
 import { db } from "@/lib/db";
+import { LOCKED_TRANSACTION } from "@/lib/lock";
 import { blockMinutes } from "./availability";
 import {
   ACTIVE_STATUSES,
   BookingLockedError,
   BookingNotFoundError,
-  isOverlapViolation,
   loadRules,
   loadServices,
   lockBookings,
+  newCancelToken,
   totalDuration,
   type Client,
 } from "./booking.service";
@@ -32,22 +33,30 @@ export class ClientNotFoundError extends Error {
 
 const isActive = (status: BookingStatus) => ACTIVE_STATUSES.includes(status);
 
-// Même verrou et même contrainte SQL que la réservation en ligne : le planning ne peut jamais être surchargé.
-async function inPlanningTransaction<T>(work: (tx: Client) => Promise<T>): Promise<T> {
-  try {
-    return await db.$transaction(async (tx) => {
-      await lockBookings(tx);
-      return await work(tx);
-    });
-  } catch (error) {
-    if (isOverlapViolation(error)) throw new PlanningConflictError("booking");
-    throw error;
-  }
+// Même verrou que la réservation en ligne : le planning ne peut jamais être surchargé.
+function inPlanningTransaction<T>(work: (tx: Client) => Promise<T>): Promise<T> {
+  return db.$transaction(async (tx) => {
+    await lockBookings(tx);
+    return work(tx);
+  }, LOCKED_TRANSACTION);
 }
 
 async function assertNoTimeOff(tx: Client, start: Date, end: Date) {
   const count = await tx.timeOff.count({ where: { startsAt: { lt: end }, endsAt: { gt: start } } });
   if (count > 0) throw new PlanningConflictError("time_off");
+}
+
+// Doit être appelé sous `lockBookings` ; `excludeId` : le rendez-vous déplacé ne se chevauche pas lui-même.
+async function assertNoBookingOverlap(tx: Client, start: Date, end: Date, excludeId?: number) {
+  const count = await tx.booking.count({
+    where: {
+      status: { in: ACTIVE_STATUSES },
+      startsAt: { lt: end },
+      endsAt: { gt: start },
+      ...(excludeId !== undefined && { id: { not: excludeId } }),
+    },
+  });
+  if (count > 0) throw new PlanningConflictError("booking");
 }
 
 // ───────── Lecture du calendrier ─────────
@@ -120,7 +129,10 @@ export function createAdminBooking(input: AdminBookingInput) {
     const services = await loadServices(tx, input.serviceIds);
     const rules = await loadRules(tx);
     const endsAt = new Date(input.startsAt.getTime() + minutesToMs(blockMinutes(totalDuration(services), rules)));
-    if (isActive(input.status)) await assertNoTimeOff(tx, input.startsAt, endsAt);
+    if (isActive(input.status)) {
+      await assertNoTimeOff(tx, input.startsAt, endsAt);
+      await assertNoBookingOverlap(tx, input.startsAt, endsAt);
+    }
 
     return tx.booking.create({
       data: {
@@ -132,6 +144,7 @@ export function createAdminBooking(input: AdminBookingInput) {
         address: input.address,
         notes: input.notes,
         source: "ADMIN",
+        cancelToken: newCancelToken(),
         items: {
           create: services.map((service) => ({
             serviceId: service.id,
@@ -175,7 +188,10 @@ async function applyUpdate(
   const endsAt = new Date(patch.startsAt.getTime() + (current.endsAt.getTime() - current.startsAt.getTime()));
   const moved = patch.startsAt.getTime() !== current.startsAt.getTime();
   const reactivated = isActive(status) && !isActive(current.status);
-  if (isActive(status) && (moved || reactivated)) await assertNoTimeOff(tx, patch.startsAt, endsAt);
+  if (isActive(status) && (moved || reactivated)) {
+    await assertNoTimeOff(tx, patch.startsAt, endsAt);
+    await assertNoBookingOverlap(tx, patch.startsAt, endsAt, id);
+  }
 
   return tx.booking.update({
     where: { id },

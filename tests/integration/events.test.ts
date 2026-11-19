@@ -32,7 +32,7 @@ const createEvent = (name: string, data: { capacity: number | null; isPublished?
     select: { id: true },
   });
 
-run("inscriptions aux événements (base PostgreSQL)", () => {
+run("inscriptions aux événements (base MySQL)", () => {
   afterAll(async () => {
     await db.event.deleteMany({ where: { slug: { startsWith: SLUG_PREFIX } } });
     await db.$disconnect();

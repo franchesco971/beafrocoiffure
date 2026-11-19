@@ -9,7 +9,6 @@ import {
   createBooking,
   getAvailability,
   getBookingByToken,
-  isOverlapViolation,
   requestBookingChange,
   type NewBooking,
 } from "@/modules/booking/booking.service";
@@ -40,7 +39,7 @@ const input = (overrides: Partial<NewBooking> & Pick<NewBooking, "startsAt">): N
 const freeSlots = async (serviceIds = [serviceId]) =>
   (await getAvailability({ serviceIds, from: day, to: day, now: NOW }))[day];
 
-run("réservation (base PostgreSQL)", () => {
+run("réservation (base MySQL)", () => {
   beforeAll(async () => {
     const category = await db.serviceCategory.create({
       data: { name: `Test ${RUN_ID}`, slug: `test-${RUN_ID}`, universe: "HAIR" },
@@ -134,22 +133,6 @@ run("réservation (base PostgreSQL)", () => {
     const failure = results.find((result) => result.status === "rejected");
     expect(failure?.reason).toBeInstanceOf(SlotUnavailableError);
     expect(await db.booking.count({ where: { startsAt: target, status: { in: ["PENDING", "CONFIRMED"] } } })).toBe(1);
-  });
-
-  it("la contrainte SQL refuse un chevauchement même sans passer par le service", async () => {
-    const existing = await db.booking.findFirstOrThrow({
-      where: { client: { email: { endsWith: EMAIL_DOMAIN } }, status: "CONFIRMED" },
-      select: { startsAt: true, endsAt: true, clientId: true },
-    });
-
-    const overlapping = db.booking.create({
-      data: {
-        clientId: existing.clientId,
-        startsAt: new Date(existing.startsAt.getTime() + 30 * 60_000),
-        endsAt: new Date(existing.endsAt.getTime() + 30 * 60_000),
-      },
-    });
-    await expect(overlapping).rejects.toSatisfy(isOverlapViolation);
   });
 
   it("libère le créneau d'un rendez-vous annulé", async () => {

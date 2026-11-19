@@ -2,7 +2,7 @@ import type { Prisma } from "@/generated/prisma/client";
 import { audit } from "@/lib/audit";
 import { db } from "@/lib/db";
 import { getRetentionMonths } from "@/lib/settings";
-import { ACTIVE_STATUSES } from "@/modules/booking/booking.service";
+import { ACTIVE_STATUSES, newCancelToken } from "@/modules/booking/booking.service";
 import { retentionCutoff } from "./retention";
 
 // Valeurs de remplacement : les rendez-vous restent comptés (statistiques, comptabilité) sans identifier la personne.
@@ -23,8 +23,6 @@ export class ClientHasUpcomingBookingsError extends Error {
   }
 }
 
-const byEmail = (email: string) => ({ equals: email, mode: "insensitive" as const });
-
 // ───────── Export (droit d'accès et portabilité) ─────────
 
 /** Toutes les données rattachées à une cliente (fiche, rendez-vous, messages, inscriptions) ; null si inconnue. */
@@ -43,12 +41,12 @@ export async function exportClientData(clientId: number, now = new Date()) {
   const [contactMessages, eventRegistrations] = client.email
     ? await Promise.all([
         db.contactMessage.findMany({
-          where: { email: byEmail(client.email) },
+          where: { email: client.email },
           orderBy: { createdAt: "asc" },
           select: { name: true, email: true, message: true, consentAt: true, createdAt: true },
         }),
         db.eventRegistration.findMany({
-          where: { email: byEmail(client.email) },
+          where: { email: client.email },
           orderBy: { createdAt: "asc" },
           select: {
             name: true,
@@ -111,10 +109,10 @@ async function anonymizeInTransaction(tx: Prisma.TransactionClient, clientId: nu
   if (upcoming > 0) throw new ClientHasUpcomingBookingsError();
 
   if (client.email) {
-    await tx.contactMessage.deleteMany({ where: { email: byEmail(client.email) } });
+    await tx.contactMessage.deleteMany({ where: { email: client.email } });
 
     const registrations = await tx.eventRegistration.findMany({
-      where: { email: byEmail(client.email) },
+      where: { email: client.email },
       select: { id: true },
     });
     const ids = registrations.map(({ id }) => id);
@@ -131,10 +129,8 @@ async function anonymizeInTransaction(tx: Prisma.TransactionClient, clientId: nu
   await tx.notification.updateMany({ where: { booking: { clientId } }, data: { recipient: ANONYMOUS_EMAIL } });
   await tx.booking.updateMany({ where: { clientId }, data: { notes: null, address: null, changeRequest: null } });
   // Les anciens liens d'annulation ne doivent plus donner accès à la moindre information.
-  await tx.$executeRaw`
-    UPDATE booking
-    SET cancel_token = replace(gen_random_uuid()::text || gen_random_uuid()::text, '-', '')
-    WHERE client_id = ${clientId}`;
+  const bookings = await tx.booking.findMany({ where: { clientId }, select: { id: true } });
+  for (const { id } of bookings) await tx.booking.update({ where: { id }, data: { cancelToken: newCancelToken() } });
   await tx.client.update({
     where: { id: clientId },
     data: {
