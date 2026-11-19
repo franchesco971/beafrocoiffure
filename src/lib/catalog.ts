@@ -1,4 +1,4 @@
-import { cacheTag } from "next/cache";
+import { cacheLife, cacheTag } from "next/cache";
 import { db } from "@/lib/db";
 
 // Lectures publiques mises en cache ; les actions d'administration invalident cette étiquette.
@@ -19,7 +19,7 @@ const serviceSummary = {
 export async function getHairCatalog() {
   "use cache";
   cacheTag(CATALOG_TAG);
-
+  cacheLife("hours");
   if (!hasDatabase) return [];
 
   return db.serviceCategory.findMany({
@@ -36,6 +36,7 @@ export async function getHairCatalog() {
 export async function getHairService(slug: string) {
   "use cache";
   cacheTag(CATALOG_TAG);
+  cacheLife("hours");
   if (!hasDatabase) return null;
 
   return db.service.findFirst({
@@ -54,6 +55,7 @@ export async function getHairService(slug: string) {
 export async function getHairServiceSlugs() {
   "use cache";
   cacheTag(CATALOG_TAG);
+  cacheLife("hours");
   if (!hasDatabase) return [];
 
   const services = await db.service.findMany({
@@ -67,6 +69,7 @@ export async function getHairServiceSlugs() {
 export async function getWellnessServices() {
   "use cache";
   cacheTag(CATALOG_TAG);
+  cacheLife("hours");
   if (!hasDatabase) return [];
 
   return db.service.findMany({
@@ -80,6 +83,7 @@ export async function getWellnessServices() {
 export async function getBookableCatalog() {
   "use cache";
   cacheTag(CATALOG_TAG);
+  cacheLife("hours");
   if (!hasDatabase) return [];
 
   return db.serviceCategory.findMany({

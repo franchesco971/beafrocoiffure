@@ -1,4 +1,4 @@
-import { cacheTag } from "next/cache";
+import { cacheLife, cacheTag } from "next/cache";
 import { db } from "@/lib/db";
 
 // Invalidée par l'administration des événements. Les places restantes ne sont pas mises en cache.
@@ -21,6 +21,7 @@ const eventSummary = {
 export async function getUpcomingEvents() {
   "use cache";
   cacheTag(EVENTS_TAG);
+  cacheLife("minutes");
   if (!hasDatabase) return [];
 
   return db.event.findMany({
@@ -33,6 +34,7 @@ export async function getUpcomingEvents() {
 export async function getPublishedEvent(slug: string) {
   "use cache";
   cacheTag(EVENTS_TAG);
+  cacheLife("minutes");
   if (!hasDatabase) return null;
 
   return db.event.findFirst({ where: { slug, isPublished: true }, select: eventSummary });
@@ -41,6 +43,7 @@ export async function getPublishedEvent(slug: string) {
 export async function getPublishedEventSlugs() {
   "use cache";
   cacheTag(EVENTS_TAG);
+  cacheLife("minutes");
   if (!hasDatabase) return [];
 
   const events = await db.event.findMany({ where: { isPublished: true }, select: { slug: true } });
