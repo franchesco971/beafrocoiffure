@@ -1,5 +1,4 @@
-import type { NextConfig } from "next";
-
+// Config en JS (pas .ts) : Next.js transpile next.config.ts avec SWC natif, absent sur les hébergeurs à glibc ancienne.
 const isDev = process.env.NODE_ENV === "development";
 
 // Défi anti-robot Cloudflare : ouvert à la CSP seulement si la clé de site est configurée.
@@ -33,7 +32,8 @@ const securityHeaders = [
   { key: "Cross-Origin-Opener-Policy", value: "same-origin" },
 ];
 
-const nextConfig: NextConfig = {
+/** @type {import("next").NextConfig} */
+const nextConfig = {
   cacheComponents: true,
   partialPrefetching: true,
   poweredByHeader: false,
@@ -42,12 +42,6 @@ const nextConfig: NextConfig = {
   },
   turbopack: {
     root: process.cwd(),
-    rules: {
-      "*.css": {
-        loaders: ["@tailwindcss/turbopack"],
-        as: "*.css",
-      },
-    },
   },
 };
 
